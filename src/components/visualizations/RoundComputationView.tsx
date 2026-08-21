@@ -4,17 +4,13 @@ import BitwiseOperationRow from './BitwiseOperationRow';
 import CompressionFlowDiagram from './CompressionFlowDiagram';
 import { formatBinaryGroups } from '../../algorithms/utils';
 
-interface Props {
-  step: ComputationStep;
-}
-
-interface VariableItem {
+export interface VariableItem {
   label: string;
   hex: string;
   binary?: string;
 }
 
-interface ScheduleItem {
+export interface ScheduleItem {
   index: number;
   hex: string;
   binary?: string;
@@ -22,11 +18,15 @@ interface ScheduleItem {
   active?: boolean;
 }
 
-interface ConstantItem {
+export interface ConstantItem {
   index: number;
   hex: string;
   binary?: string;
   active?: boolean;
+}
+
+interface Props {
+  step: ComputationStep;
 }
 
 export default function RoundComputationView({ step }: Props) {
@@ -47,7 +47,7 @@ export default function RoundComputationView({ step }: Props) {
   const activeK = data.activeK as ConstantItem | undefined;
   const activeW = data.activeW as ScheduleItem | undefined;
 
-  // Sub-computation details
+  // SHA-256 / SHA-2 sub-computation details
   const temp1 = data.temp1 as any;
   const temp2 = data.temp2 as any;
   const sigma0Expansion = data.sigma0 as any;
@@ -55,6 +55,9 @@ export default function RoundComputationView({ step }: Props) {
   const wMinus16 = data.wMinus16 as any;
   const wMinus7 = data.wMinus7 as any;
   const scheduleResult = data.result as any;
+
+  // MD5 sub-computation details
+  const md5Step = data.md5Step as any;
 
   // Hash updates
   const updates = data.updates as Array<{
@@ -97,26 +100,27 @@ export default function RoundComputationView({ step }: Props) {
       {/* ─── Main 3-Column Persistent Architecture ─────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_240px] gap-2.5 items-start">
         {/* ========================================================================= */}
-        {/* COLUMN 1: MESSAGE BUFFER INSPECTOR (W[00..63]) */}
+        {/* COLUMN 1: MESSAGE BUFFER INSPECTOR (W / M) */}
         {/* ========================================================================= */}
         <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2 flex flex-col h-[670px]">
           <div className="flex items-center justify-between pb-1 border-b border-[#1f2937] mb-1">
             <div className="flex items-center gap-1.5">
               <span className="h-1 w-1 bg-[#38bdf8]" />
               <span className="text-[9px] font-semibold uppercase tracking-wider text-[#38bdf8]">
-                BUFFER: W[00..63]
+                BUFFER: {schedule.length <= 16 ? `M[00..${(schedule.length - 1).toString().padStart(2, '0')}]` : `W[00..${(schedule.length - 1).toString().padStart(2, '0')}]`}
               </span>
             </div>
             <span className="text-[8px] text-[#475569] tabular-nums font-medium">
-              {schedule.length || 64} WORDS
+              {schedule.length || 0} WORDS
             </span>
           </div>
 
           {schedule.length > 0 ? (
             <div className="overflow-y-auto space-y-0.5 pr-0.5 flex-1 font-mono text-[11px]">
               {schedule.map((item) => {
-                const isActive = item.active || (roundIdx !== undefined && item.index === roundIdx);
+                const isActive = item.active || (roundIdx !== undefined && item.index === roundIdx && !md5Step);
                 const offset = (item.index * 4).toString(16).padStart(2, '0').toUpperCase();
+                const prefix = schedule.length <= 16 ? 'M' : 'W';
                 return (
                   <div
                     key={item.index}
@@ -132,7 +136,7 @@ export default function RoundComputationView({ step }: Props) {
                       <div className="flex items-center gap-1.5">
                         <span className="text-[8px] text-[#475569]">0x{offset}</span>
                         <span className="font-medium text-[9px]">
-                          W[{item.index.toString().padStart(2, '0')}]
+                          {prefix}[{item.index.toString().padStart(2, '0')}]
                         </span>
                         {isActive && <span className="text-[#e5a93b] text-[8px]">▶</span>}
                       </div>
@@ -158,21 +162,21 @@ export default function RoundComputationView({ step }: Props) {
         {/* COLUMN 2: HARDWARE ALU & REGISTER BANK */}
         {/* ========================================================================= */}
         <div className="space-y-2.5 min-w-0">
-          {/* Register Bank (Registers a–h) */}
+          {/* Dynamic Register Bank (Registers a–h, or a–d for MD5) */}
           <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2">
             <div className="flex items-center justify-between mb-1.5 pb-1 border-b border-[#1f2937]">
               <div className="flex items-center gap-1.5">
                 <span className="h-1 w-1 bg-[#e5a93b]" />
                 <span className="text-[9px] font-semibold uppercase tracking-wider text-[#e5a93b]">
-                  32-BIT REGISTER BANK (REG a–h)
+                  {displayVars.length > 0 ? `${displayVars.length * 32}-BIT REGISTER BANK (${displayVars.map(v => v.label).join(', ')})` : 'REGISTER BANK'}
                 </span>
               </div>
               <span className="text-[8px] text-[#475569] uppercase font-medium">
-                WIDTH: 256-BIT BUS
+                WIDTH: {displayVars.length * 32}-BIT BUS
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
+            <div className={`grid gap-1 ${displayVars.length <= 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-4'}`}>
               {displayVars.map((v, idx) => (
                 <div
                   key={v.label}
@@ -192,7 +196,7 @@ export default function RoundComputationView({ step }: Props) {
             </div>
           </div>
 
-          {/* ALU Circuit Flow Diagram */}
+          {/* SHA-256 ALU Circuit Flow Diagram (if temp1 or temp2 present) */}
           {(temp1 || temp2) && (
             <CompressionFlowDiagram
               prevVariables={prevVars}
@@ -209,7 +213,128 @@ export default function RoundComputationView({ step }: Props) {
           )}
 
           {/* ===================================================================== */}
-          {/* BITWISE BARREL SHIFTER & GATES: Temp1 Sub-Operations */}
+          {/* MD5 ALU PIPELINE GATE BREAKDOWN */}
+          {/* ===================================================================== */}
+          {md5Step && (
+            <div className="space-y-2 rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5">
+              <div className="flex items-center justify-between border-b border-[#1f2937] pb-1">
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-[#38bdf8]">
+                  MD5 ALU PIPELINE: {md5Step.funcName}-FUNCTION (STEP {roundIdx !== undefined ? roundIdx + 1 : 1})
+                </span>
+                <span className="text-[8px] text-[#64748b] tabular-nums">
+                  {md5Step.formula}
+                </span>
+              </div>
+
+              {/* 1. Logic Function F/G/H/I */}
+              <div className="space-y-0.5">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#34d399] flex items-center gap-1">
+                  <span className="h-1 w-1 bg-[#34d399]" />
+                  <span>1. LOGIC FUNCTION: {md5Step.funcName}(B, C, D)</span>
+                </div>
+                <BitwiseOperationRow
+                  label="REG.B"
+                  binary={md5Step.b.binary}
+                  hex={md5Step.b.hex}
+                  opType="input"
+                />
+                <BitwiseOperationRow
+                  label="REG.C"
+                  binary={md5Step.c.binary}
+                  hex={md5Step.c.hex}
+                  opType="input"
+                />
+                <BitwiseOperationRow
+                  label="REG.D"
+                  binary={md5Step.d.binary}
+                  hex={md5Step.d.hex}
+                  opType="input"
+                />
+                <BitwiseOperationRow
+                  label={`${md5Step.funcName} OUT`}
+                  binary={md5Step.fResult.binary}
+                  hex={md5Step.fResult.hex}
+                  opType="xor"
+                  tag={md5Step.funcName}
+                  isResult
+                />
+              </div>
+
+              {/* 2. 4-Term Modulo 2^32 Addition */}
+              <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#c084fc] flex items-center gap-1">
+                  <span className="h-1 w-1 bg-[#c084fc]" />
+                  <span>2. 4-TERM ACCUMULATOR: Temp = A + {md5Step.funcName}(B,C,D) + M[{md5Step.mIndex}] + K[{md5Step.kIndex}]</span>
+                </div>
+                <BitwiseOperationRow
+                  label="REG.A"
+                  binary={md5Step.a.binary}
+                  hex={md5Step.a.hex}
+                  opType="add"
+                />
+                <BitwiseOperationRow
+                  label={`${md5Step.funcName}(B,C,D)`}
+                  binary={md5Step.fResult.binary}
+                  hex={md5Step.fResult.hex}
+                  opType="add"
+                />
+                <BitwiseOperationRow
+                  label={`BUF M[${md5Step.mIndex}]`}
+                  binary={md5Step.m.binary}
+                  hex={md5Step.m.hex}
+                  opType="add"
+                />
+                <BitwiseOperationRow
+                  label={`ROM K[${md5Step.kIndex}]`}
+                  binary={md5Step.k.binary}
+                  hex={md5Step.k.hex}
+                  opType="add"
+                />
+                <BitwiseOperationRow
+                  label="SUM OUT"
+                  binary={md5Step.sum.binary}
+                  hex={md5Step.sum.hex}
+                  opType="result"
+                  tag="ADD mod 2³²"
+                  isResult
+                />
+              </div>
+
+              {/* 3. Barrel Shifter & Register Update */}
+              <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#e5a93b] flex items-center gap-1">
+                  <span className="h-1 w-1 bg-[#e5a93b]" />
+                  <span>3. BARREL SHIFTER & B-WRITEBACK: B' = B + ROTL(Temp, {md5Step.shift})</span>
+                </div>
+                <BitwiseOperationRow
+                  label={`ROTL^${md5Step.shift}`}
+                  binary={md5Step.rotResult.binary}
+                  hex={md5Step.rotResult.hex}
+                  opType="rot"
+                  tag={`ROTL ${md5Step.shift}`}
+                />
+                <BitwiseOperationRow
+                  label="NEW REG.B"
+                  binary={md5Step.newB.binary}
+                  hex={md5Step.newB.hex}
+                  opType="result"
+                  tag="B' WRITEBACK"
+                  isResult
+                />
+              </div>
+
+              {/* Cascade Rotate Line */}
+              <div className="text-center text-[9px] font-mono text-[#64748b] bg-[#090c10] rounded-[2px] py-0.5 border border-[#1f2937]">
+                <span className="text-[#475569] uppercase font-medium mr-1.5">
+                  REGISTER ROTATE:
+                </span>
+                A ← D &nbsp;·&nbsp; D ← C &nbsp;·&nbsp; C ← B &nbsp;·&nbsp; B ← B'
+              </div>
+            </div>
+          )}
+
+          {/* ===================================================================== */}
+          {/* SHA-256 Temp1 Sub-Operations */}
           {/* ===================================================================== */}
           {temp1 && (
             <div className="space-y-2 rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5">
@@ -343,7 +468,7 @@ export default function RoundComputationView({ step }: Props) {
             </div>
           )}
 
-          {/* Temp2 Sub-Operations */}
+          {/* SHA-256 Temp2 Sub-Operations */}
           {temp2 && (
             <div className="space-y-2 rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5">
               <div className="flex items-center justify-between border-b border-[#1f2937] pb-1">
@@ -646,18 +771,18 @@ export default function RoundComputationView({ step }: Props) {
             <div className="flex items-center gap-1.5">
               <span className="h-1 w-1 bg-[#e5a93b]" />
               <span className="text-[9px] font-semibold uppercase tracking-wider text-[#e5a93b]">
-                ROM: K[00..63]
+                ROM: K[00..{(constants.length - 1).toString().padStart(2, '0')}]
               </span>
             </div>
             <span className="text-[8px] text-[#475569] tabular-nums font-medium">
-              {constants.length || 64} ENTRIES
+              {constants.length || 0} ENTRIES
             </span>
           </div>
 
           {constants.length > 0 ? (
             <div className="overflow-y-auto space-y-0.5 pr-0.5 flex-1 font-mono text-[11px]">
               {constants.map((item) => {
-                const isActive = item.active || (roundIdx !== undefined && item.index === roundIdx);
+                const isActive = item.active || (roundIdx !== undefined && item.index === roundIdx && !md5Step);
                 const offset = (item.index * 4).toString(16).padStart(2, '0').toUpperCase();
                 return (
                   <div

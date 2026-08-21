@@ -21,8 +21,9 @@ export const RHO = [
 export interface KeccakConfig {
   rate: number;      // in bits
   capacity: number;  // in bits
-  outputLen: number; // in bits
-  domainSep: number; // 0x01 for Keccak, 0x06 for SHA3
+  outputLen: number; // in bits (digest output size)
+  domainSep: number; // 0x01 for Keccak, 0x06 for SHA3, 0x1F for SHAKE
+  algoName?: string;
 }
 
 function rotl64(value: bigint, shift: number): bigint {
@@ -54,9 +55,12 @@ export function computeKeccakFamily(input: string, config: KeccakConfig): Comput
   const steps: ComputationStep[] = [];
   const inputBytes = stringToBytes(input);
   const rateInBytes = config.rate / 8;
-  const domainLabel = config.domainSep === 0x01 ? 'Keccak-256 (0x01)' : 'SHA-3 (0x06)';
+  const domainLabel =
+    config.domainSep === 0x01 ? 'Keccak (0x01)' :
+    config.domainSep === 0x1f ? 'SHAKE XOF (0x1F)' :
+    'NIST SHA-3 (0x06)';
   
-  // Padding
+  // Padding: pad10*1
   let padLen = rateInBytes - (inputBytes.length % rateInBytes);
   const paddedBytes = new Uint8Array(inputBytes.length + padLen);
   paddedBytes.set(inputBytes);
@@ -186,6 +190,37 @@ export function computeKeccakFamily(input: string, config: KeccakConfig): Comput
       const laneBytes = setLane(A[laneX][laneY]);
       for (let i = 0; i < 8 && squeezed < outputBytes.length; i++) {
         outputBytes[squeezed++] = laneBytes[i];
+      }
+    }
+    // If more bytes needed, run Keccak-f permutation again (for long squeezing in SHAKE)
+    if (squeezed < outputBytes.length) {
+      // Keccak-f[1600]
+      for (let round = 0; round < 24; round++) {
+        const C = new Array(5).fill(0n);
+        const D = new Array(5).fill(0n);
+        for (let x = 0; x < 5; x++) {
+          C[x] = A[x][0] ^ A[x][1] ^ A[x][2] ^ A[x][3] ^ A[x][4];
+        }
+        for (let x = 0; x < 5; x++) {
+          D[x] = C[(x + 4) % 5] ^ rotl64(C[(x + 1) % 5], 1);
+        }
+        for (let x = 0; x < 5; x++) {
+          for (let y = 0; y < 5; y++) {
+            A[x][y] ^= D[x];
+          }
+        }
+        const B: bigint[][] = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 0n));
+        for (let x = 0; x < 5; x++) {
+          for (let y = 0; y < 5; y++) {
+            B[y][(2 * x + 3 * y) % 5] = rotl64(A[x][y], RHO[x][y]);
+          }
+        }
+        for (let x = 0; x < 5; x++) {
+          for (let y = 0; y < 5; y++) {
+            A[x][y] = (B[x][y] ^ ((~B[(x + 1) % 5][y]) & B[(x + 2) % 5][y])) & 0xFFFFFFFFFFFFFFFFn;
+          }
+        }
+        A[0][0] ^= RC[round];
       }
     }
   }

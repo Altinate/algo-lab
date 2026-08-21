@@ -2,22 +2,40 @@ import { describe, it, expect } from 'vitest';
 import { listAlgorithms, getAlgorithm, getAlgorithmsByFamily } from '../src/algorithms/registry';
 
 describe('Algorithm Registry', () => {
-  it('registers all 13 built-in algorithms', () => {
+  it('registers all 22 built-in algorithms', () => {
     const algorithms = listAlgorithms();
-    expect(algorithms.length).toBe(13);
+    expect(algorithms.length).toBe(22);
     const names = algorithms.map((a) => a.info.name);
+    // MD & SHA-1
     expect(names).toContain('MD5');
     expect(names).toContain('SHA-1');
+
+    // SHA-2
     expect(names).toContain('SHA-224');
     expect(names).toContain('SHA-256');
     expect(names).toContain('SHA-384');
     expect(names).toContain('SHA-512');
+    expect(names).toContain('SHA-512/224');
+    expect(names).toContain('SHA-512/256');
+
+    // SHA-3 / Keccak
+    expect(names).toContain('SHA3-224');
     expect(names).toContain('SHA3-256');
+    expect(names).toContain('SHA3-384');
     expect(names).toContain('SHA3-512');
+    expect(names).toContain('Keccak-224');
     expect(names).toContain('Keccak-256');
+    expect(names).toContain('Keccak-384');
+    expect(names).toContain('Keccak-512');
+    expect(names).toContain('SHAKE128');
+    expect(names).toContain('SHAKE256');
+
+    // BLAKE
     expect(names).toContain('BLAKE2s');
     expect(names).toContain('BLAKE2b');
     expect(names).toContain('BLAKE3');
+
+    // CRC
     expect(names).toContain('CRC32');
   });
 
@@ -38,17 +56,26 @@ describe('Algorithm Registry', () => {
       'SHA-256',
       'SHA-384',
       'SHA-512',
+      'SHA-512/224',
+      'SHA-512/256',
     ]);
     expect(byFamily.has('SHA-3')).toBe(true);
     expect(byFamily.get('SHA-3')?.map((a) => a.info.name)).toEqual([
+      'SHA3-224',
       'SHA3-256',
+      'SHA3-384',
       'SHA3-512',
+      'Keccak-224',
       'Keccak-256',
+      'Keccak-384',
+      'Keccak-512',
+      'SHAKE128',
+      'SHAKE256',
     ]);
     expect(byFamily.has('BLAKE')).toBe(true);
     expect(byFamily.get('BLAKE')?.map((a) => a.info.name)).toEqual([
-      'BLAKE2b',
       'BLAKE2s',
+      'BLAKE2b',
       'BLAKE3',
     ]);
     expect(byFamily.has('MD5')).toBe(true);

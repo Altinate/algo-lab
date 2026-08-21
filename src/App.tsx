@@ -74,10 +74,10 @@ export default function App() {
           <div className="flex items-center gap-2">
             <span className="h-1.5 w-1.5 bg-[#38bdf8]" />
             <h1 className="text-xs font-semibold tracking-tight text-white uppercase">
-              CRYPTOGRAPHIC LOGIC ANALYZER
+              CRYPTOSCOPE
             </h1>
             <span className="hidden sm:inline-block text-[9px] text-[#64748b] border-l border-[#1f2937] pl-2 uppercase font-medium">
-              STATE DISASSEMBLER & ALU INSPECTOR
+              INTERACTIVE CRYPTOGRAPHIC INSPECTOR
             </span>
           </div>
         </div>

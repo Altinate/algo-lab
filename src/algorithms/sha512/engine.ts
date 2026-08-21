@@ -1,33 +1,25 @@
 import {
   stringToBytes,
   bytesToHex,
-  bytesToBinary,
   uint64ToHex,
   uint64ToBinary,
-  formatHexGroups,
-  formatBinaryGroups,
   add64,
 } from '../utils';
 import { ComputationStep, ComputationResult } from '../types';
 import { K_512 } from './constants';
 import {
-  ch64,
-  maj64,
-  bigSigma0_64,
-  bigSigma1_64,
-  sigma0_64,
-  sigma1_64,
-  sigma0Breakdown64,
-  sigma1Breakdown64,
   bigSigma0Breakdown64,
   bigSigma1Breakdown64,
   chBreakdown64,
   majBreakdown64,
+  sigma0_64,
+  sigma1_64,
 } from './operations';
 
 export interface SHA512EngineConfig {
   initialHash: bigint[];
-  outputWords?: number; // 6 for SHA-384, 8 for SHA-512
+  outputBits?: number; // 224, 256, 384, or 512
+  algoName?: string;
   is384?: boolean;
 }
 
@@ -41,8 +33,8 @@ function formatWord64(w: bigint) {
 
 export function computeSHA512Family(input: string, config: SHA512EngineConfig): ComputationResult {
   const steps: ComputationStep[] = [];
-  const algoName = config.is384 ? 'SHA-384' : 'SHA-512';
-  const outWords = config.outputWords ?? (config.is384 ? 6 : 8);
+  const outputBits = config.outputBits ?? (config.is384 ? 384 : 512);
+  const algoName = config.algoName ?? (config.is384 ? 'SHA-384' : outputBits === 224 ? 'SHA-512/224' : outputBits === 256 ? 'SHA-512/256' : 'SHA-512');
 
   const fullConstants = K_512.map((kVal, idx) => ({
     index: idx,
@@ -127,7 +119,6 @@ export function computeSHA512Family(input: string, config: SHA512EngineConfig): 
   const numBlocks = totalLength / 128;
 
   for (let blockIdx = 0; blockIdx < numBlocks; blockIdx++) {
-    const blockPhase = `Block ${blockIdx + 1} / ${numBlocks}`;
     const offset = blockIdx * 128;
     const W = new Array<bigint>(80).fill(0n);
 
@@ -304,17 +295,19 @@ export function computeSHA512Family(input: string, config: SHA512EngineConfig): 
     });
   }
 
-  // 5. Final Output
-  const finalH = H.slice(0, outWords);
-  const finalDigest = finalH.map(uint64ToHex).join('');
+  // 5. Final Output (truncate to outputBits)
+  const fullDigestHex = H.map(uint64ToHex).join('');
+  const finalHexLength = outputBits / 4;
+  const finalDigest = fullDigestHex.slice(0, finalHexLength);
+
+  const numFullWords = Math.ceil(outputBits / 64);
+  const finalH = H.slice(0, numFullWords);
 
   steps.push({
     id: 'final-digest',
     title: 'Final Digest Assembly',
     phase: 'Finalization',
-    description: config.is384
-      ? 'Concatenate the first 6 64-bit hash values A..F (384 bits) in big-endian byte order for the final digest.'
-      : 'Concatenate all 8 64-bit hash values A..H (512 bits) in big-endian byte order for the final digest.',
+    description: `Concatenate the required 64-bit state registers in big-endian byte order to produce the ${outputBits}-bit ${algoName} digest (${finalHexLength} hex characters).`,
     data: {
       hashValues: finalH.map((hVal, idx) => ({
         label: String.fromCharCode(65 + idx),

@@ -59,6 +59,9 @@ export default function RoundComputationView({ step }: Props) {
   // MD5 sub-computation details
   const md5Step = data.md5Step as any;
 
+  // SHA-1 sub-computation details
+  const sha1Step = data.sha1Step as any;
+
   // Hash updates
   const updates = data.updates as Array<{
     label: string;
@@ -118,7 +121,7 @@ export default function RoundComputationView({ step }: Props) {
           {schedule.length > 0 ? (
             <div className="overflow-y-auto space-y-0.5 pr-0.5 flex-1 font-mono text-[11px]">
               {schedule.map((item) => {
-                const isActive = item.active || (roundIdx !== undefined && item.index === roundIdx && !md5Step);
+                const isActive = item.active || (roundIdx !== undefined && item.index === roundIdx && !md5Step && !sha1Step);
                 const offset = (item.index * 4).toString(16).padStart(2, '0').toUpperCase();
                 const prefix = schedule.length <= 16 ? 'M' : 'W';
                 return (
@@ -162,7 +165,7 @@ export default function RoundComputationView({ step }: Props) {
         {/* COLUMN 2: HARDWARE ALU & REGISTER BANK */}
         {/* ========================================================================= */}
         <div className="space-y-2.5 min-w-0">
-          {/* Dynamic Register Bank (Registers a–h, or a–d for MD5) */}
+          {/* Dynamic Register Bank (Registers a–h, a–e for SHA-1, a–d for MD5) */}
           <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2">
             <div className="flex items-center justify-between mb-1.5 pb-1 border-b border-[#1f2937]">
               <div className="flex items-center gap-1.5">
@@ -176,7 +179,7 @@ export default function RoundComputationView({ step }: Props) {
               </span>
             </div>
 
-            <div className={`grid gap-1 ${displayVars.length <= 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-4'}`}>
+            <div className={`grid gap-1 ${displayVars.length <= 4 ? 'grid-cols-2 sm:grid-cols-4' : displayVars.length <= 5 ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'}`}>
               {displayVars.map((v, idx) => (
                 <div
                   key={v.label}
@@ -210,6 +213,140 @@ export default function RoundComputationView({ step }: Props) {
               chHex={temp1?.ch?.result?.hex}
               majHex={temp2?.maj?.result?.hex}
             />
+          )}
+
+          {/* ===================================================================== */}
+          {/* SHA-1 ALU PIPELINE GATE BREAKDOWN */}
+          {/* ===================================================================== */}
+          {sha1Step && (
+            <div className="space-y-2 rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5">
+              <div className="flex items-center justify-between border-b border-[#1f2937] pb-1">
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-[#38bdf8]">
+                  SHA-1 ALU PIPELINE: {sha1Step.funcName}-FUNCTION (STEP {roundIdx !== undefined ? roundIdx + 1 : 1})
+                </span>
+                <span className="text-[8px] text-[#64748b] tabular-nums">
+                  {sha1Step.formula}
+                </span>
+              </div>
+
+              {/* 1. Logic Function Ch/Parity/Maj */}
+              <div className="space-y-0.5">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#34d399] flex items-center gap-1">
+                  <span className="h-1 w-1 bg-[#34d399]" />
+                  <span>1. LOGIC FUNCTION: {sha1Step.funcName}(B, C, D)</span>
+                </div>
+                <BitwiseOperationRow
+                  label="REG.B"
+                  binary={sha1Step.b.binary}
+                  hex={sha1Step.b.hex}
+                  opType="input"
+                />
+                <BitwiseOperationRow
+                  label="REG.C"
+                  binary={sha1Step.c.binary}
+                  hex={sha1Step.c.hex}
+                  opType="input"
+                />
+                <BitwiseOperationRow
+                  label="REG.D"
+                  binary={sha1Step.d.binary}
+                  hex={sha1Step.d.hex}
+                  opType="input"
+                />
+                <BitwiseOperationRow
+                  label={`${sha1Step.funcName} OUT`}
+                  binary={sha1Step.fResult.binary}
+                  hex={sha1Step.fResult.hex}
+                  opType="xor"
+                  tag={sha1Step.funcName}
+                  isResult
+                />
+              </div>
+
+              {/* 2. Barrel Shifter ROTL5(A) */}
+              <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#fb923c] flex items-center gap-1">
+                  <span className="h-1 w-1 bg-[#fb923c]" />
+                  <span>2. BARREL SHIFTER: ROTL⁵(A)</span>
+                </div>
+                <BitwiseOperationRow
+                  label="REG.A"
+                  binary={sha1Step.a.binary}
+                  hex={sha1Step.a.hex}
+                  opType="input"
+                />
+                <BitwiseOperationRow
+                  label="ROTL⁵(A)"
+                  binary={sha1Step.rot5A.binary}
+                  hex={sha1Step.rot5A.hex}
+                  opType="rot"
+                  tag="ROTL 5"
+                  isResult
+                />
+              </div>
+
+              {/* 3. 5-Term Modulo 2^32 Addition */}
+              <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#c084fc] flex items-center gap-1">
+                  <span className="h-1 w-1 bg-[#c084fc]" />
+                  <span>3. ALU 5-TERM ACCUMULATOR: Temp = ROTL⁵(A) + {sha1Step.funcName} + E + K[t] + W[t] (mod 2³²)</span>
+                </div>
+                <BitwiseOperationRow
+                  label="ROTL⁵(A)"
+                  binary={sha1Step.rot5A.binary}
+                  hex={sha1Step.rot5A.hex}
+                  opType="add"
+                />
+                <BitwiseOperationRow
+                  label={`${sha1Step.funcName}(B,C,D)`}
+                  binary={sha1Step.fResult.binary}
+                  hex={sha1Step.fResult.hex}
+                  opType="add"
+                />
+                <BitwiseOperationRow
+                  label="REG.E"
+                  binary={sha1Step.e.binary}
+                  hex={sha1Step.e.hex}
+                  opType="add"
+                />
+                <BitwiseOperationRow
+                  label={`ROM K[${roundIdx ?? 't'}]`}
+                  binary={sha1Step.k.binary}
+                  hex={sha1Step.k.hex}
+                  opType="add"
+                />
+                <BitwiseOperationRow
+                  label={`BUF W[${roundIdx ?? 't'}]`}
+                  binary={sha1Step.w.binary}
+                  hex={sha1Step.w.hex}
+                  opType="add"
+                />
+                <BitwiseOperationRow
+                  label="Temp (NEW A)"
+                  binary={sha1Step.temp.binary}
+                  hex={sha1Step.temp.hex}
+                  opType="result"
+                  tag="ALU Temp"
+                  isResult
+                />
+              </div>
+
+              {/* 4. Barrel Shifter ROTL30(B) & Register Cascade */}
+              <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#e5a93b] flex items-center gap-1">
+                  <span className="h-1 w-1 bg-[#e5a93b]" />
+                  <span>4. CASCADE WRITEBACK: E ← D, D ← C, C ← ROTL³⁰(B), B ← A, A ← Temp</span>
+                </div>
+                <BitwiseOperationRow
+                  label="ROTL³⁰(B)"
+                  binary={sha1Step.rot30B.binary}
+                  hex={sha1Step.rot30B.hex}
+                  opType="rot"
+                  tag="ROTL 30 (NEW C)"
+                  isResult
+                />
+              </div>
+            </div>
           )}
 
           {/* ===================================================================== */}
@@ -764,7 +901,7 @@ export default function RoundComputationView({ step }: Props) {
         </div>
 
         {/* ========================================================================= */}
-        {/* COLUMN 3: FIRMWARE ROM CONSTANTS (K[00..63]) */}
+        {/* COLUMN 3: FIRMWARE ROM CONSTANTS (K[00..N]) */}
         {/* ========================================================================= */}
         <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2 flex flex-col h-[670px]">
           <div className="flex items-center justify-between pb-1 border-b border-[#1f2937] mb-1">
@@ -782,7 +919,7 @@ export default function RoundComputationView({ step }: Props) {
           {constants.length > 0 ? (
             <div className="overflow-y-auto space-y-0.5 pr-0.5 flex-1 font-mono text-[11px]">
               {constants.map((item) => {
-                const isActive = item.active || (roundIdx !== undefined && item.index === roundIdx && !md5Step);
+                const isActive = item.active || (roundIdx !== undefined && item.index === roundIdx && !md5Step && !sha1Step);
                 const offset = (item.index * 4).toString(16).padStart(2, '0').toUpperCase();
                 return (
                   <div

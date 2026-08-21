@@ -1,3 +1,4 @@
+import React from 'react';
 import type { ComputationStep } from '../../algorithms/types';
 
 interface Props {
@@ -18,52 +19,54 @@ export default function XorTableView({ step }: Props) {
   const xorInput = data.xorInput as string | undefined;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 font-mono">
       {byteIndex !== undefined && (
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-gray-500">Byte {byteIndex}:</span>
+        <div className="flex items-center gap-2 text-xs pb-1 border-b border-[#1f2937] tabular-nums">
+          <span className="text-[9px] uppercase tracking-wider text-[#64748b] font-medium">
+            BYTE OFFSET 0x{byteIndex.toString(16).padStart(2, '0').toUpperCase()}
+          </span>
           {byteChar && (
-            <span className="rounded bg-gray-700 px-2 py-0.5 font-mono text-white">
+            <span className="rounded-[2px] bg-[#151c28] border border-[#1f2937] px-1.5 py-0.2 text-[10px] text-white">
               '{byteChar}'
             </span>
           )}
           {byteValue !== undefined && (
-            <span className="font-mono text-cyan-400">
+            <span className="text-[#38bdf8] font-medium text-[11px]">
               0x{byteValue.toString(16).padStart(2, '0')}
             </span>
           )}
         </div>
       )}
 
-      <div className="grid gap-1 font-mono text-xs">
+      <div className="grid gap-1 font-mono text-[11px] tabular-nums">
         {prevCrc && (
-          <div className="flex items-center gap-2">
-            <span className="w-28 text-gray-500">Previous CRC</span>
-            <span className="text-gray-400">{prevCrc}</span>
+          <div className="flex items-center justify-between rounded-[2px] bg-[#0e131b] px-2 py-1 border border-[#1f2937]">
+            <span className="text-[9px] uppercase tracking-wider text-[#64748b] font-medium">PREV CRC REGISTER</span>
+            <span className="text-[#94a3b8] font-medium">{prevCrc}</span>
           </div>
         )}
         {xorInput && (
-          <div className="flex items-center gap-2">
-            <span className="w-28 text-gray-500">XOR input</span>
-            <span className="text-amber-400">{xorInput}</span>
+          <div className="flex items-center justify-between rounded-[2px] bg-[#0e131b] px-2 py-1 border border-[#1f2937]">
+            <span className="text-[9px] uppercase tracking-wider text-[#64748b] font-medium">XOR INPUT STREAM</span>
+            <span className="text-[#e5a93b] font-medium">{xorInput}</span>
           </div>
         )}
         {tableIndex && (
-          <div className="flex items-center gap-2">
-            <span className="w-28 text-gray-500">Table index</span>
-            <span className="text-purple-400">{tableIndex}</span>
+          <div className="flex items-center justify-between rounded-[2px] bg-[#0e131b] px-2 py-1 border border-[#1f2937]">
+            <span className="text-[9px] uppercase tracking-wider text-[#64748b] font-medium">LOOKUP TABLE INDEX</span>
+            <span className="text-[#c084fc] font-medium">{tableIndex}</span>
           </div>
         )}
         {tableValue && (
-          <div className="flex items-center gap-2">
-            <span className="w-28 text-gray-500">Table value</span>
-            <span className="text-purple-400">{tableValue}</span>
+          <div className="flex items-center justify-between rounded-[2px] bg-[#0e131b] px-2 py-1 border border-[#1f2937]">
+            <span className="text-[9px] uppercase tracking-wider text-[#64748b] font-medium">POLYNOMIAL VALUE</span>
+            <span className="text-[#c084fc] font-medium">{tableValue}</span>
           </div>
         )}
         {newCrc && (
-          <div className="flex items-center gap-2">
-            <span className="w-28 text-gray-500">New CRC</span>
-            <span className="text-green-400 font-semibold">{newCrc}</span>
+          <div className="flex items-center justify-between rounded-[2px] bg-[#0c1813] px-2 py-1 border border-[#34d399]/40">
+            <span className="text-[9px] uppercase tracking-wider text-[#34d399] font-medium">UPDATED CRC32 STATE</span>
+            <span className="text-[#34d399] font-semibold phosphor-green">{newCrc}</span>
           </div>
         )}
       </div>

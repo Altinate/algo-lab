@@ -1,3 +1,4 @@
+import React from 'react';
 import type { ComputationStep } from '../../algorithms/types';
 
 interface Props {
@@ -18,12 +19,14 @@ export default function MixingFunctionView({ step }: Props) {
   const mixType = data.mixType as string | undefined;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5 font-mono">
       {roundIndex !== undefined && (
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-gray-500">Round {roundIndex}</span>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-[10px] uppercase font-medium text-[#64748b] tabular-nums">
+            ROUND 0x{roundIndex.toString(16).padStart(2, '0').toUpperCase()}
+          </span>
           {mixType && (
-            <span className="rounded bg-purple-600/20 px-2 py-0.5 text-xs text-purple-400 border border-purple-500/30">
+            <span className="rounded-[2px] bg-[#120e18] px-1.5 py-0.2 text-[9px] font-semibold text-[#c084fc] border border-[#c084fc]/35 uppercase tracking-wider">
               {mixType}
             </span>
           )}
@@ -32,30 +35,30 @@ export default function MixingFunctionView({ step }: Props) {
 
       {/* G function calls */}
       {gCalls && gCalls.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-xs uppercase tracking-wider text-gray-500">
-            G Mixing Calls
+        <div className="space-y-1.5">
+          <h4 className="text-[9px] uppercase tracking-wider text-[#64748b] font-medium">
+            G MIXING OPERATIONS
           </h4>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-1.5 sm:grid-cols-2">
             {gCalls.map((g) => (
               <div
                 key={g.label}
-                className="rounded-md border border-gray-700 bg-gray-800/50 p-2"
+                className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2 space-y-1"
               >
-                <span className="text-xs text-gray-500">{g.label}</span>
-                <div className="mt-1 flex items-center gap-1 font-mono text-[10px]">
-                  <span className="text-gray-500">in:</span>
+                <span className="text-[9px] uppercase font-semibold text-[#94a3b8]">{g.label}</span>
+                <div className="flex items-center gap-1 font-mono text-[10px] tabular-nums">
+                  <span className="text-[#64748b] text-[8px] uppercase font-medium">IN:</span>
                   {g.inputs.map((v, i) => (
-                    <span key={i} className="text-cyan-400">
-                      {v.slice(0, 8)}
+                    <span key={i} className="text-[#38bdf8] font-medium">
+                      0x{v.slice(0, 8)}
                     </span>
                   ))}
                 </div>
-                <div className="flex items-center gap-1 font-mono text-[10px]">
-                  <span className="text-gray-500">out:</span>
+                <div className="flex items-center gap-1 font-mono text-[10px] tabular-nums">
+                  <span className="text-[#64748b] text-[8px] uppercase font-medium">OUT:</span>
                   {g.outputs.map((v, i) => (
-                    <span key={i} className="text-green-400">
-                      {v.slice(0, 8)}
+                    <span key={i} className="text-[#34d399] font-medium">
+                      0x{v.slice(0, 8)}
                     </span>
                   ))}
                 </div>
@@ -67,28 +70,27 @@ export default function MixingFunctionView({ step }: Props) {
 
       {/* State display */}
       {state && (
-        <div className={prevState ? 'grid gap-4 md:grid-cols-2' : ''}>
+        <div className={prevState ? 'grid gap-2.5 md:grid-cols-2' : ''}>
           {prevState && (
-            <div>
-              <h4 className="mb-2 text-xs uppercase tracking-wider text-gray-500">
-                Before
+            <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2">
+              <h4 className="mb-1 text-[9px] uppercase tracking-wider text-[#64748b] font-medium">
+                PRE-ROUND 16-WORD STATE
               </h4>
               <StateColumn values={prevState} />
             </div>
           )}
-          <div>
-            <h4 className="mb-2 text-xs uppercase tracking-wider text-gray-500">
-              {prevState ? 'After' : 'State'}
+          <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2">
+            <h4 className="mb-1 text-[9px] uppercase tracking-wider text-[#38bdf8] font-semibold">
+              {prevState ? 'POST-ROUND 16-WORD STATE' : 'CURRENT 16-WORD STATE'}
             </h4>
             <StateColumn values={state} prevValues={prevState} />
           </div>
         </div>
       )}
 
-      {/* Fallback for simple data */}
       {!state && !gCalls && (
-        <div className="text-sm text-gray-400">
-          <pre className="overflow-x-auto">{JSON.stringify(data, null, 2)}</pre>
+        <div className="text-[11px] text-[#64748b] font-mono">
+          MIXING OPERATION DATA READY
         </div>
       )}
     </div>
@@ -102,29 +104,28 @@ function StateColumn({
   values: string[];
   prevValues?: string[];
 }) {
-  // Display as 4×4 grid (BLAKE2/3 uses 16-word state)
   const rows = [];
   for (let i = 0; i < values.length; i += 4) {
     rows.push(values.slice(i, i + 4));
   }
 
   return (
-    <div className="space-y-0.5">
+    <div className="space-y-1">
       {rows.map((row, ri) => (
-        <div key={ri} className="flex gap-1">
+        <div key={ri} className="grid grid-cols-4 gap-1">
           {row.map((val, ci) => {
             const idx = ri * 4 + ci;
             const changed = prevValues ? prevValues[idx] !== val : false;
             return (
               <span
                 key={ci}
-                className={`rounded border px-1 py-0.5 font-mono text-[10px] ${
+                className={`rounded-[2px] border px-1 py-0.5 font-mono text-[10px] tabular-nums text-center ${
                   changed
-                    ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300'
-                    : 'border-gray-700 text-cyan-400'
+                    ? 'border-[#e5a93b]/50 bg-[#15120c] text-[#e5a93b] font-semibold phosphor-amber'
+                    : 'border-[#1f2937] bg-[#0e131b] text-[#38bdf8] font-medium'
                 }`}
               >
-                v{idx}: {val.slice(0, 8)}
+                v{idx}: 0x{val.slice(0, 6)}
               </span>
             );
           })}

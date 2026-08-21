@@ -1,3 +1,4 @@
+import React from 'react';
 import type { ComputationStep } from '../../algorithms/types';
 
 interface Props {
@@ -19,14 +20,13 @@ export default function MerkleTreeView({ step }: Props) {
 
   if (tree) {
     return (
-      <div className="flex justify-center overflow-x-auto py-4">
+      <div className="flex justify-center overflow-x-auto py-2 font-mono">
         <TreeNodeComponent node={tree} />
       </div>
     );
   }
 
   if (nodes) {
-    // Flat list display for simpler trees
     const levels = new Map<number, typeof nodes>();
     for (const node of nodes) {
       if (!levels.has(node.level)) levels.set(node.level, []);
@@ -34,23 +34,23 @@ export default function MerkleTreeView({ step }: Props) {
     }
 
     return (
-      <div className="space-y-3">
+      <div className="space-y-2 font-mono">
         {Array.from(levels.entries())
           .sort(([a], [b]) => a - b)
           .map(([level, levelNodes]) => (
-            <div key={level}>
-              <h4 className="mb-1 text-xs text-gray-500">Level {level}</h4>
-              <div className="flex flex-wrap gap-2">
+            <div key={level} className="space-y-1">
+              <h4 className="text-[9px] uppercase tracking-wider text-[#64748b] font-medium">TREE LEVEL {level}</h4>
+              <div className="flex flex-wrap gap-1.5 tabular-nums">
                 {levelNodes.map((node) => (
                   <div
                     key={node.label}
-                    className={`rounded-md border px-2 py-1 font-mono text-xs ${
+                    className={`rounded-[2px] border px-2 py-0.5 text-[11px] ${
                       node.active
-                        ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300'
-                        : 'border-gray-600 bg-gray-800 text-cyan-400'
+                        ? 'border-[#e5a93b]/60 bg-[#15120c] text-[#e5a93b] font-semibold phosphor-amber'
+                        : 'border-[#1f2937] bg-[#0e131b] text-[#38bdf8] font-medium'
                     }`}
                   >
-                    <span className="text-gray-500">{node.label}: </span>
+                    <span className="text-[#64748b] text-[9px] mr-1">{node.label}:</span>
                     {node.value.slice(0, 16)}…
                   </div>
                 ))}
@@ -61,33 +61,30 @@ export default function MerkleTreeView({ step }: Props) {
     );
   }
 
-  // Fallback
   return (
-    <div className="text-sm text-gray-400">
-      <pre className="overflow-x-auto">
-        {JSON.stringify(data, null, 2)}
-      </pre>
+    <div className="text-[11px] text-[#64748b] font-mono">
+      TREE HIERARCHY DATA READY
     </div>
   );
 }
 
 function TreeNodeComponent({ node }: { node: TreeNode }) {
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-1 font-mono">
       <div
-        className={`rounded-md border px-3 py-1.5 font-mono text-xs ${
+        className={`rounded-[2px] border px-2 py-1 text-[11px] tabular-nums ${
           node.active
-            ? 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300'
-            : 'border-gray-600 bg-gray-800 text-cyan-400'
+            ? 'border-[#e5a93b]/60 bg-[#15120c] text-[#e5a93b] font-semibold phosphor-amber'
+            : 'border-[#1f2937] bg-[#0e131b] text-[#38bdf8] font-medium'
         }`}
       >
-        <div className="text-gray-500 text-[10px]">{node.label}</div>
+        <div className="text-[#64748b] text-[8px] uppercase tracking-wider">{node.label}</div>
         <div>{node.value.slice(0, 16)}…</div>
       </div>
       {node.children && node.children.length > 0 && (
         <>
-          <div className="h-4 w-px bg-gray-600" />
-          <div className="flex gap-6">
+          <div className="h-3 w-px bg-[#1f2937]" />
+          <div className="flex gap-4">
             {node.children.map((child, i) => (
               <TreeNodeComponent key={i} node={child} />
             ))}

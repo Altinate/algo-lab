@@ -1,3 +1,4 @@
+import React from 'react';
 import type { ComputationStep } from '../../algorithms/types';
 
 interface Props {
@@ -14,39 +15,39 @@ export default function StateMatrixView({ step }: Props) {
 
   if (!stateMatrix) {
     return (
-      <div className="text-sm text-gray-400">
-        <pre className="overflow-x-auto">
-          {JSON.stringify(data, null, 2)}
-        </pre>
+      <div className="text-[11px] text-[#64748b] font-mono">
+        STATE MATRIX DATA UNAVAILABLE
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5 font-mono">
       {roundIndex !== undefined && (
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">Round {roundIndex}</span>
+          <span className="text-[10px] uppercase font-medium text-[#64748b] tabular-nums">
+            ROUND 0x{roundIndex.toString(16).padStart(2, '0').toUpperCase()}
+          </span>
           {subStep && (
-            <span className="rounded bg-purple-600/20 px-2 py-0.5 text-xs font-medium text-purple-400 border border-purple-500/30">
-              {subStep}
+            <span className="rounded-[2px] bg-[#120e18] px-1.5 py-0.2 text-[9px] font-semibold text-[#c084fc] border border-[#c084fc]/35 uppercase tracking-wider">
+              STEP: {subStep}
             </span>
           )}
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-2.5 lg:grid-cols-2">
         {prevStateMatrix && (
-          <div>
-            <h4 className="mb-2 text-xs uppercase tracking-wider text-gray-500">
-              Before
+          <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2">
+            <h4 className="mb-1 text-[9px] uppercase tracking-wider text-[#64748b] font-medium">
+              PRE-ROUND STATE (5×5 64-BIT LANES)
             </h4>
             <StateGrid matrix={prevStateMatrix} />
           </div>
         )}
-        <div>
-          <h4 className="mb-2 text-xs uppercase tracking-wider text-gray-500">
-            {prevStateMatrix ? 'After' : 'State'}
+        <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2">
+          <h4 className="mb-1 text-[9px] uppercase tracking-wider text-[#38bdf8] font-semibold">
+            {prevStateMatrix ? 'POST-ROUND STATE (5×5 LANES)' : 'CURRENT 5×5 STATE MATRIX'}
           </h4>
           <StateGrid
             matrix={stateMatrix}
@@ -67,10 +68,21 @@ function StateGrid({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="border-collapse">
+      <table className="border-collapse w-full font-mono text-[11px] tabular-nums">
+        <thead>
+          <tr>
+            <th className="p-0.5 text-[8px] text-[#475569] font-medium text-left">Y\X</th>
+            {[0, 1, 2, 3, 4].map((x) => (
+              <th key={x} className="p-0.5 text-[8px] text-[#475569] font-medium text-center">
+                x={x}
+              </th>
+            ))}
+          </tr>
+        </thead>
         <tbody>
           {matrix.map((row, y) => (
             <tr key={y}>
+              <td className="p-0.5 text-[8px] text-[#475569] font-medium">y={y}</td>
               {row.map((cell, x) => {
                 const changed = prevMatrix
                   ? prevMatrix[y]?.[x] !== cell
@@ -78,13 +90,13 @@ function StateGrid({
                 return (
                   <td
                     key={x}
-                    className={`border border-gray-700 px-1.5 py-1 font-mono text-[10px] ${
+                    className={`border border-[#1f2937] px-1 py-0.5 text-center transition-colors ${
                       changed
-                        ? 'bg-yellow-500/10 text-yellow-300'
-                        : 'text-cyan-400'
+                        ? 'bg-[#15120c] text-[#e5a93b] font-semibold phosphor-amber'
+                        : 'bg-[#0e131b] text-[#38bdf8] font-medium'
                     }`}
                   >
-                    {cell.length > 8 ? cell.slice(0, 8) + '…' : cell}
+                    0x{cell.length > 8 ? cell.slice(0, 8) + '..' : cell}
                   </td>
                 );
               })}

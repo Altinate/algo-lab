@@ -70,44 +70,44 @@ export default function RoundComputationView({ step }: Props) {
   const roundIdx = data.roundIndex as number | undefined;
 
   return (
-    <div className="space-y-3 font-mono text-[#f8fafc]">
+    <div className="space-y-2.5 font-mono text-[#f8fafc]">
       {/* ─── Hardware Telemetry Toolbar ───────────────────────────────── */}
-      <div className="flex items-center justify-between bg-[#0b0e14] px-3 py-1.5 rounded-[2px] border border-[#1f2937] text-xs">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between bg-[#0b0e14] px-2.5 py-1 rounded-[2px] border border-[#1f2937] text-xs">
+        <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-none bg-[#38bdf8]" />
-            <span className="text-[10px] uppercase tracking-wider text-[#64748b] font-bold">
-              LOGIC ANALYZER: 3-BUS STATE INSPECTOR
+            <span className="h-1.5 w-1.5 bg-[#38bdf8]" />
+            <span className="text-[9px] uppercase tracking-wider text-[#64748b] font-medium">
+              3-BUS STATE INSPECTOR
             </span>
           </div>
           {roundIdx !== undefined && (
-            <span className="rounded-[2px] bg-[#17140e] border border-[#e5a93b]/50 text-[#e5a93b] px-2 py-0.2 text-[10px] font-bold tabular-nums phosphor-amber">
+            <span className="rounded-[2px] bg-[#15120c] border border-[#e5a93b]/40 text-[#e5a93b] px-1.5 py-0.1 text-[9px] font-semibold tabular-nums phosphor-amber">
               CYCLE: 0x{roundIdx.toString(16).padStart(2, '0').toUpperCase()} (R{roundIdx})
             </span>
           )}
         </div>
         <button
           onClick={() => setBinaryMode(!binaryMode)}
-          className="rounded-[2px] border border-[#1f2937] bg-[#121620] px-2.5 py-0.5 text-[10px] text-[#94a3b8] hover:bg-[#1a2232] hover:text-[#f8fafc] transition-colors"
+          className="rounded-[2px] border border-[#1f2937] bg-[#10141d] px-2 py-0.5 text-[9px] font-medium text-[#94a3b8] hover:bg-[#161d2b] hover:text-[#f8fafc] transition-colors"
         >
           {binaryMode ? 'MODE: HEX + BINARY' : 'MODE: HEX ONLY'}
         </button>
       </div>
 
       {/* ─── Main 3-Column Persistent Architecture ─────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_240px] gap-3 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_240px] gap-2.5 items-start">
         {/* ========================================================================= */}
         {/* COLUMN 1: MESSAGE BUFFER INSPECTOR (W[00..63]) */}
         {/* ========================================================================= */}
-        <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5 flex flex-col h-[680px]">
-          <div className="flex items-center justify-between pb-1.5 border-b border-[#1f2937] mb-1.5">
+        <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2 flex flex-col h-[670px]">
+          <div className="flex items-center justify-between pb-1 border-b border-[#1f2937] mb-1">
             <div className="flex items-center gap-1.5">
               <span className="h-1 w-1 bg-[#38bdf8]" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#38bdf8]">
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-[#38bdf8]">
                 BUFFER: W[00..63]
               </span>
             </div>
-            <span className="text-[9px] text-[#475569] tabular-nums">
+            <span className="text-[8px] text-[#475569] tabular-nums font-medium">
               {schedule.length || 64} WORDS
             </span>
           </div>
@@ -120,9 +120,9 @@ export default function RoundComputationView({ step }: Props) {
                 return (
                   <div
                     key={item.index}
-                    className={`rounded-[2px] px-1.5 py-1 border transition-all tabular-nums ${
+                    className={`rounded-[2px] px-1.5 py-0.5 border transition-all tabular-nums ${
                       isActive
-                        ? 'border-[#e5a93b]/70 bg-[#16120b] text-[#e5a93b] ring-1 ring-[#e5a93b]/40 phosphor-amber'
+                        ? 'border-[#e5a93b]/60 bg-[#15120c] text-[#e5a93b] ring-1 ring-[#e5a93b]/35 phosphor-amber'
                         : item.computed
                           ? 'border-[#1f2937] bg-[#0e131b] text-[#38bdf8]'
                           : 'border-transparent bg-transparent text-[#475569]'
@@ -130,16 +130,16 @@ export default function RoundComputationView({ step }: Props) {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[9px] text-[#475569]">0x{offset}</span>
-                        <span className="font-bold text-[10px]">
+                        <span className="text-[8px] text-[#475569]">0x{offset}</span>
+                        <span className="font-medium text-[9px]">
                           W[{item.index.toString().padStart(2, '0')}]
                         </span>
-                        {isActive && <span className="text-[#e5a93b] text-[9px] font-bold">▶</span>}
+                        {isActive && <span className="text-[#e5a93b] text-[8px]">▶</span>}
                       </div>
-                      <span className="font-bold tracking-wider">0x{item.hex}</span>
+                      <span className="font-medium tracking-wider text-[11px]">0x{item.hex}</span>
                     </div>
                     {binaryMode && item.binary && (
-                      <div className="text-[8.5px] tracking-tight text-[#64748b] mt-0.5 select-all">
+                      <div className="text-[8px] tracking-tight text-[#64748b] mt-0.5 select-all">
                         {formatBinaryGroups(item.binary, 8)}
                       </div>
                     )}
@@ -148,8 +148,8 @@ export default function RoundComputationView({ step }: Props) {
               })}
             </div>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-[10px] text-[#475569] italic p-4 text-center">
-              Message buffer ready for expansion cycle
+            <div className="flex-1 flex items-center justify-center text-[9px] text-[#475569] uppercase p-4 text-center">
+              MESSAGE BUFFER AWAITING INPUT
             </div>
           )}
         </div>
@@ -157,33 +157,33 @@ export default function RoundComputationView({ step }: Props) {
         {/* ========================================================================= */}
         {/* COLUMN 2: HARDWARE ALU & REGISTER BANK */}
         {/* ========================================================================= */}
-        <div className="space-y-3 min-w-0">
+        <div className="space-y-2.5 min-w-0">
           {/* Register Bank (Registers a–h) */}
-          <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5 shadow-none">
-            <div className="flex items-center justify-between mb-2 pb-1 border-b border-[#1f2937]">
+          <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2">
+            <div className="flex items-center justify-between mb-1.5 pb-1 border-b border-[#1f2937]">
               <div className="flex items-center gap-1.5">
                 <span className="h-1 w-1 bg-[#e5a93b]" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#e5a93b]">
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-[#e5a93b]">
                   32-BIT REGISTER BANK (REG a–h)
                 </span>
               </div>
-              <span className="text-[9px] text-[#475569] uppercase">
-                BUS WIDTH: 256 BITS
+              <span className="text-[8px] text-[#475569] uppercase font-medium">
+                WIDTH: 256-BIT BUS
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
               {displayVars.map((v, idx) => (
                 <div
                   key={v.label}
-                  className="rounded-[2px] border border-[#1f2937] bg-[#0e131b] p-1.5 tabular-nums"
+                  className="rounded-[2px] border border-[#1f2937] bg-[#0e131b] p-1 tabular-nums"
                 >
-                  <div className="flex items-center justify-between text-[11px] font-bold mb-0.5">
-                    <span className="text-[#64748b] text-[9px]">0x0{idx} REG.{v.label}</span>
-                    <span className="text-[#38bdf8] font-bold">0x{v.hex}</span>
+                  <div className="flex items-center justify-between text-[10px] font-medium mb-0.5">
+                    <span className="text-[#64748b] text-[8px]">0x{idx} REG.{v.label}</span>
+                    <span className="text-[#38bdf8] font-medium text-[11px]">0x{v.hex}</span>
                   </div>
                   {binaryMode && v.binary && (
-                    <div className="text-[8px] text-[#64748b] tracking-tighter truncate select-all">
+                    <div className="text-[7.5px] text-[#64748b] tracking-tighter truncate select-all">
                       {formatBinaryGroups(v.binary, 8)}
                     </div>
                   )}
@@ -212,19 +212,19 @@ export default function RoundComputationView({ step }: Props) {
           {/* BITWISE BARREL SHIFTER & GATES: Temp1 Sub-Operations */}
           {/* ===================================================================== */}
           {temp1 && (
-            <div className="space-y-2.5 rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-3">
-              <div className="flex items-center justify-between border-b border-[#1f2937] pb-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#c084fc]">
+            <div className="space-y-2 rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5">
+              <div className="flex items-center justify-between border-b border-[#1f2937] pb-1">
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-[#c084fc]">
                   ALU-R GATE MECHANICS: Temp1 (T1) PIPELINE
                 </span>
-                <span className="text-[9px] text-[#64748b] tabular-nums">
+                <span className="text-[8px] text-[#64748b] tabular-nums">
                   T1 = h + Σ₁(e) + Ch(e,f,g) + Kᵢ + Wᵢ
                 </span>
               </div>
 
               {/* Sigma 1 (e) */}
-              <div className="space-y-1">
-                <div className="text-[10px] font-bold text-[#fb923c] flex items-center gap-1.5">
+              <div className="space-y-0.5">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#fb923c] flex items-center gap-1">
                   <span className="h-1 w-1 bg-[#fb923c]" />
                   <span>1. BARREL SHIFTER: Σ₁(e) = ROTR⁶(e) ⊕ ROTR¹¹(e) ⊕ ROTR²⁵(e)</span>
                 </div>
@@ -266,8 +266,8 @@ export default function RoundComputationView({ step }: Props) {
               </div>
 
               {/* Choice Function */}
-              <div className="space-y-1 pt-1.5 border-t border-[#1f2937]">
-                <div className="text-[10px] font-bold text-[#34d399] flex items-center gap-1.5">
+              <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#34d399] flex items-center gap-1">
                   <span className="h-1 w-1 bg-[#34d399]" />
                   <span>2. LOGIC MUX: Ch(e, f, g) = (e ∧ f) ⊕ (¬e ∧ g)</span>
                 </div>
@@ -296,8 +296,8 @@ export default function RoundComputationView({ step }: Props) {
               </div>
 
               {/* Temp 1 Sum */}
-              <div className="space-y-1 pt-1.5 border-t border-[#1f2937]">
-                <div className="text-[10px] font-bold text-[#c084fc] flex items-center gap-1.5">
+              <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#c084fc] flex items-center gap-1">
                   <span className="h-1 w-1 bg-[#c084fc]" />
                   <span>3. ALU 5-TERM ACCUMULATOR: Temp1 = h + Σ₁(e) + Ch + Kᵢ + Wᵢ (mod 2³²)</span>
                 </div>
@@ -345,19 +345,19 @@ export default function RoundComputationView({ step }: Props) {
 
           {/* Temp2 Sub-Operations */}
           {temp2 && (
-            <div className="space-y-2.5 rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-3">
-              <div className="flex items-center justify-between border-b border-[#1f2937] pb-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#38bdf8]">
+            <div className="space-y-2 rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5">
+              <div className="flex items-center justify-between border-b border-[#1f2937] pb-1">
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-[#38bdf8]">
                   ALU-L GATE MECHANICS: Temp2 (T2) PIPELINE
                 </span>
-                <span className="text-[9px] text-[#64748b] tabular-nums">
+                <span className="text-[8px] text-[#64748b] tabular-nums">
                   T2 = Σ₀(a) + Maj(a,b,c)
                 </span>
               </div>
 
               {/* Sigma 0 (a) */}
-              <div className="space-y-1">
-                <div className="text-[10px] font-bold text-[#fb923c] flex items-center gap-1.5">
+              <div className="space-y-0.5">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#fb923c] flex items-center gap-1">
                   <span className="h-1 w-1 bg-[#fb923c]" />
                   <span>1. BARREL SHIFTER: Σ₀(a) = ROTR²(a) ⊕ ROTR¹³(a) ⊕ ROTR²²(a)</span>
                 </div>
@@ -399,8 +399,8 @@ export default function RoundComputationView({ step }: Props) {
               </div>
 
               {/* Majority Function */}
-              <div className="space-y-1 pt-1.5 border-t border-[#1f2937]">
-                <div className="text-[10px] font-bold text-[#34d399] flex items-center gap-1.5">
+              <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#34d399] flex items-center gap-1">
                   <span className="h-1 w-1 bg-[#34d399]" />
                   <span>2. MAJORITY GATE: Maj(a, b, c) = (a ∧ b) ⊕ (a ∧ c) ⊕ (b ∧ c)</span>
                 </div>
@@ -436,8 +436,8 @@ export default function RoundComputationView({ step }: Props) {
               </div>
 
               {/* Temp 2 Sum */}
-              <div className="space-y-1 pt-1.5 border-t border-[#1f2937]">
-                <div className="text-[10px] font-bold text-[#38bdf8] flex items-center gap-1.5">
+              <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#38bdf8] flex items-center gap-1">
                   <span className="h-1 w-1 bg-[#38bdf8]" />
                   <span>3. ALU 2-TERM ACCUMULATOR: Temp2 = Σ₀(a) + Maj(a,b,c) (mod 2³²)</span>
                 </div>
@@ -469,19 +469,19 @@ export default function RoundComputationView({ step }: Props) {
           {/* MESSAGE SCHEDULE EXPANSION MECHANICS (sigma0 / sigma1) */}
           {/* ===================================================================== */}
           {sigma0Expansion && sigma1Expansion && (
-            <div className="space-y-2.5 rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-3">
-              <div className="flex items-center justify-between border-b border-[#1f2937] pb-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#38bdf8]">
+            <div className="space-y-2 rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5">
+              <div className="flex items-center justify-between border-b border-[#1f2937] pb-1">
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-[#38bdf8]">
                   SCHEDULE EXPANSION: W[i] COMPUTATION
                 </span>
-                <span className="text-[9px] text-[#64748b] tabular-nums">
+                <span className="text-[8px] text-[#64748b] tabular-nums">
                   W[i] = σ₁(W[i-2]) + W[i-7] + σ₀(W[i-15]) + W[i-16]
                 </span>
               </div>
 
               {/* Lower Sigma 0 */}
-              <div className="space-y-1">
-                <div className="text-[10px] font-bold text-[#fb923c]">
+              <div className="space-y-0.5">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#fb923c]">
                   1. LOWER SIGMA 0: σ₀(W[i-15]) = ROTR⁷ ⊕ ROTR¹⁸ ⊕ SHR³
                 </div>
                 <BitwiseOperationRow
@@ -522,8 +522,8 @@ export default function RoundComputationView({ step }: Props) {
               </div>
 
               {/* Lower Sigma 1 */}
-              <div className="space-y-1 pt-1.5 border-t border-[#1f2937]">
-                <div className="text-[10px] font-bold text-[#fb923c]">
+              <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
+                <div className="text-[9px] font-medium uppercase tracking-wider text-[#fb923c]">
                   2. LOWER SIGMA 1: σ₁(W[i-2]) = ROTR¹⁷ ⊕ ROTR¹⁹ ⊕ SHR¹⁰
                 </div>
                 <BitwiseOperationRow
@@ -565,8 +565,8 @@ export default function RoundComputationView({ step }: Props) {
 
               {/* Total Schedule Addition */}
               {wMinus16 && wMinus7 && scheduleResult && (
-                <div className="space-y-1 pt-1.5 border-t border-[#1f2937]">
-                  <div className="text-[10px] font-bold text-[#e5a93b]">
+                <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
+                  <div className="text-[9px] font-medium uppercase tracking-wider text-[#e5a93b]">
                     3. ALU 4-WORD ACCUMULATOR FOR W[i]
                   </div>
                   <BitwiseOperationRow
@@ -608,28 +608,28 @@ export default function RoundComputationView({ step }: Props) {
 
           {/* Hash Value Updates */}
           {updates && (
-            <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-3 space-y-1.5">
-              <div className="flex items-center gap-1.5 mb-1">
+            <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2 space-y-1">
+              <div className="flex items-center gap-1 mb-0.5">
                 <span className="h-1 w-1 bg-[#34d399]" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#34d399]">
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-[#34d399]">
                   BLOCK ACCUMULATION: H[i] ← H[i] + Variable[i]
                 </span>
               </div>
-              <div className="grid gap-1 font-mono text-[11px] tabular-nums">
+              <div className="grid gap-0.5 font-mono text-[10px] tabular-nums">
                 {updates.map((u) => (
                   <div
                     key={u.label}
-                    className="flex items-center justify-between rounded-[2px] bg-[#0e131b] px-2 py-1 border border-[#1f2937]"
+                    className="flex items-center justify-between rounded-[2px] bg-[#0e131b] px-2 py-0.5 border border-[#1f2937]"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-[#64748b] font-bold w-12">{u.label}</span>
+                      <span className="text-[#64748b] font-medium w-10">{u.label}</span>
                       <span className="text-[#94a3b8]">0x{u.prevHex}</span>
                       <span className="text-[#64748b]">+</span>
                       <span className="text-[#e5a93b]">0x{u.addHex}</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1">
                       <span className="text-[#64748b]">→</span>
-                      <span className="text-[#34d399] font-bold">0x{u.newHex}</span>
+                      <span className="text-[#34d399] font-medium">0x{u.newHex}</span>
                     </div>
                   </div>
                 ))}
@@ -641,15 +641,15 @@ export default function RoundComputationView({ step }: Props) {
         {/* ========================================================================= */}
         {/* COLUMN 3: FIRMWARE ROM CONSTANTS (K[00..63]) */}
         {/* ========================================================================= */}
-        <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5 flex flex-col h-[680px]">
-          <div className="flex items-center justify-between pb-1.5 border-b border-[#1f2937] mb-1.5">
+        <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2 flex flex-col h-[670px]">
+          <div className="flex items-center justify-between pb-1 border-b border-[#1f2937] mb-1">
             <div className="flex items-center gap-1.5">
               <span className="h-1 w-1 bg-[#e5a93b]" />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#e5a93b]">
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-[#e5a93b]">
                 ROM: K[00..63]
               </span>
             </div>
-            <span className="text-[9px] text-[#475569] tabular-nums">
+            <span className="text-[8px] text-[#475569] tabular-nums font-medium">
               {constants.length || 64} ENTRIES
             </span>
           </div>
@@ -662,26 +662,26 @@ export default function RoundComputationView({ step }: Props) {
                 return (
                   <div
                     key={item.index}
-                    className={`rounded-[2px] px-1.5 py-1 border transition-all tabular-nums ${
+                    className={`rounded-[2px] px-1.5 py-0.5 border transition-all tabular-nums ${
                       isActive
-                        ? 'border-[#e5a93b]/70 bg-[#16120b] text-[#e5a93b] ring-1 ring-[#e5a93b]/40 phosphor-amber'
+                        ? 'border-[#e5a93b]/60 bg-[#15120c] text-[#e5a93b] ring-1 ring-[#e5a93b]/35 phosphor-amber'
                         : 'border-transparent bg-transparent text-[#94a3b8]'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[9px] text-[#475569]">0x{offset}</span>
-                        <span className="text-[#64748b] text-[10px]">
+                        <span className="text-[8px] text-[#475569]">0x{offset}</span>
+                        <span className="text-[#64748b] text-[9px] font-medium">
                           K[{item.index.toString().padStart(2, '0')}]
                         </span>
-                        {isActive && <span className="text-[#e5a93b] text-[9px] font-bold">▶</span>}
+                        {isActive && <span className="text-[#e5a93b] text-[8px]">▶</span>}
                       </div>
-                      <span className={isActive ? 'font-bold text-[#e5a93b]' : 'text-[#cbd5e1]'}>
+                      <span className={isActive ? 'font-semibold text-[#e5a93b] text-[11px]' : 'text-[#cbd5e1] text-[11px] font-medium'}>
                         0x{item.hex}
                       </span>
                     </div>
                     {binaryMode && item.binary && (
-                      <div className="text-[8.5px] tracking-tight text-[#475569] mt-0.5 select-all">
+                      <div className="text-[8px] tracking-tight text-[#475569] mt-0.5 select-all">
                         {formatBinaryGroups(item.binary, 8)}
                       </div>
                     )}
@@ -690,8 +690,8 @@ export default function RoundComputationView({ step }: Props) {
               })}
             </div>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-[10px] text-[#475569] italic p-4 text-center">
-              ROM constants table
+            <div className="flex-1 flex items-center justify-center text-[9px] text-[#475569] uppercase p-4 text-center">
+              ROM CONSTANTS TABLE
             </div>
           )}
         </div>

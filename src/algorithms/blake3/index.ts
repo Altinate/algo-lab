@@ -1,6 +1,6 @@
 import type { AlgorithmPlugin, AlgorithmInfo, ComputationStep } from '../types';
 import { stringToBytes, uint32ToHex } from '../utils';
-import { IV32, G32, formatState32 } from '../blake2/engine';
+import { IV32, G32Detail, formatState32 } from '../blake2/engine';
 
 const INFO: AlgorithmInfo = {
   name: 'BLAKE3',
@@ -94,7 +94,7 @@ export const blake3Plugin: AlgorithmPlugin = {
       description:
         'Initialize state vector v[0..15]: v[0..7] from IV/CV, v[8..11] from IV[0..3], v[12..13] chunk counter (0), v[14] block length, v[15] flags (CHUNK_START | CHUNK_END | ROOT = 11).',
       data: {
-        v: formatState32(v),
+        state: formatState32(v),
         flags: `0x${flags.toString(16).padStart(2, '0')} (CHUNK_START | CHUNK_END | ROOT)`,
         blockLen,
       },
@@ -106,29 +106,33 @@ export const blake3Plugin: AlgorithmPlugin = {
     // 7 Compression Rounds
     for (let r = 0; r < 7; r++) {
       const prevState = [...v];
+      const gCalls = [];
 
       // Column step: 4 G calls
-      G32(v, 0, 4, 8, 12, m[0], m[1]);
-      G32(v, 1, 5, 9, 13, m[2], m[3]);
-      G32(v, 2, 6, 10, 14, m[4], m[5]);
-      G32(v, 3, 7, 11, 15, m[6], m[7]);
+      gCalls.push(G32Detail(v, 0, 4, 8, 12, m[0], m[1], 0, 1, 'column'));
+      gCalls.push(G32Detail(v, 1, 5, 9, 13, m[2], m[3], 2, 3, 'column'));
+      gCalls.push(G32Detail(v, 2, 6, 10, 14, m[4], m[5], 4, 5, 'column'));
+      gCalls.push(G32Detail(v, 3, 7, 11, 15, m[6], m[7], 6, 7, 'column'));
 
       // Diagonal step: 4 G calls
-      G32(v, 0, 5, 10, 15, m[8], m[9]);
-      G32(v, 1, 6, 11, 12, m[10], m[11]);
-      G32(v, 2, 7, 8, 13, m[12], m[13]);
-      G32(v, 3, 4, 9, 14, m[14], m[15]);
+      gCalls.push(G32Detail(v, 0, 5, 10, 15, m[8], m[9], 8, 9, 'diagonal'));
+      gCalls.push(G32Detail(v, 1, 6, 11, 12, m[10], m[11], 10, 11, 'diagonal'));
+      gCalls.push(G32Detail(v, 2, 7, 8, 13, m[12], m[13], 12, 13, 'diagonal'));
+      gCalls.push(G32Detail(v, 3, 4, 9, 14, m[14], m[15], 14, 15, 'diagonal'));
 
       steps.push({
         id: `round-${r}`,
-        title: `Compression Round ${r + 1} of 7`,
+        title: `BLAKE3 Round ${r + 1} of 7`,
         phase: 'Compression',
         description: `Round ${r + 1}: Apply G mixing functions to columns and diagonals, then permute message words using BLAKE3 schedule.`,
         data: {
           roundIndex: r + 1,
+          mixType: 'Columns & Diagonals',
           prevState: formatState32(prevState),
           state: formatState32(v),
-          mixType: 'Columns & Diagonals',
+          gCalls,
+          m: formatState32(m),
+          sigma: MSG_PERMUTATION,
         },
         visualizationType: 'mixing-function',
       });
@@ -149,12 +153,11 @@ export const blake3Plugin: AlgorithmPlugin = {
       phase: 'Finalization',
       description: 'Compute final 8 words by XORing upper and lower halves of state: out[i] = v[i] ⊕ v[i + 8].',
       data: {
-        hashValues: out.map((w, idx) => ({
-          label: `h[${idx}]`,
-          hex: uint32ToHex(w),
-        })),
+        state: formatState32(out.concat(out)),
+        prevState: formatState32(v),
+        mixType: 'State XOR Reduction',
       },
-      visualizationType: 'round-computation',
+      visualizationType: 'mixing-function',
     });
 
     // Format output as little-endian hex string
@@ -169,7 +172,7 @@ export const blake3Plugin: AlgorithmPlugin = {
     steps.push({
       id: 'final-digest',
       title: 'Final Hash Digest',
-      phase: 'Output',
+      phase: 'Finalization',
       description: `Format the 8 output words as 32 little-endian bytes in hexadecimal (256-bit digest):\n\n${digest}`,
       data: {
         digest,

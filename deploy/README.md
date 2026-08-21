@@ -9,7 +9,7 @@ This folder contains scripts to build, deploy, run, and configure the Hash Algor
 | File | Description |
 |---|---|
 | [`deploy.sh`](./deploy.sh) | Installs dependencies, runs test suite, builds production assets in `dist/` |
-| [`start.sh`](./start.sh) | Starts the production web server (default: port `3000`, host `0.0.0.0`) |
+| [`start.sh`](./start.sh) | Starts the production web server with **automatic port collision detection** (default: `3002`) |
 | [`install-service.sh`](./install-service.sh) | Installs & enables the systemd service for boot startup |
 | [`hash-visualizer.service`](./hash-visualizer.service) | Systemd unit configuration file |
 
@@ -27,7 +27,7 @@ chmod +x deploy/*.sh
 ### 2. Run Directly in Terminal
 
 ```bash
-# Default (port 3000)
+# Default (port 3002, auto-increments if in use)
 ./deploy/start.sh
 
 # Or with custom port / host

@@ -61,7 +61,7 @@ export default function App() {
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={toggleSidebar}
-            className={`flex h-6 w-6 items-center justify-center rounded-[2px] border transition-all text-xs ${
+            className={`flex h-6 w-6 items-center justify-center rounded-[2px] border transition-all text-xs font-medium ${
               sidebarOpen
                 ? 'border-[#1f2937] bg-[#121620] text-[#38bdf8] hover:bg-[#1a2232]'
                 : 'border-[#38bdf8]/50 bg-[#0f1d2e] text-[#38bdf8] hover:bg-[#152238] ring-1 ring-[#38bdf8]/40'
@@ -72,11 +72,11 @@ export default function App() {
           </button>
 
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 bg-[#38bdf8]" />
-            <h1 className="text-xs font-bold tracking-tight text-white uppercase">
+            <span className="h-1.5 w-1.5 bg-[#38bdf8]" />
+            <h1 className="text-xs font-semibold tracking-tight text-white uppercase">
               CRYPTOGRAPHIC LOGIC ANALYZER
             </h1>
-            <span className="hidden sm:inline-block text-[9px] text-[#64748b] border-l border-[#1f2937] pl-2 uppercase">
+            <span className="hidden sm:inline-block text-[9px] text-[#64748b] border-l border-[#1f2937] pl-2 uppercase font-medium">
               STATE DISASSEMBLER & ALU INSPECTOR
             </span>
           </div>
@@ -86,8 +86,8 @@ export default function App() {
         <div className="flex items-center gap-2 sm:gap-3">
           {engine.algorithm && (
             <div className="flex items-center gap-1.5 rounded-[2px] bg-[#0e131b] px-2 py-0.5 border border-[#1f2937] text-[11px] tabular-nums">
-              <span className="text-[#64748b] hidden sm:inline text-[9px]">TARGET:</span>
-              <span className="font-bold text-[#38bdf8]">
+              <span className="text-[#64748b] hidden sm:inline text-[9px] font-medium">TARGET:</span>
+              <span className="font-semibold text-[#38bdf8]">
                 {engine.algorithm.info.name}
               </span>
               <span className="text-[9px] text-[#64748b]">
@@ -97,8 +97,8 @@ export default function App() {
           )}
 
           <div className="hidden md:flex items-center gap-1 text-[11px] text-[#64748b] bg-[#0e131b] px-2 py-0.5 rounded-[2px] border border-[#1f2937] tabular-nums">
-            <span className="text-[9px]">CYCLE:</span>
-            <span className="font-bold text-[#e5a93b] phosphor-amber">
+            <span className="text-[9px] font-medium">CYCLE:</span>
+            <span className="font-semibold text-[#e5a93b] phosphor-amber">
               {engine.steps.length > 0 ? `${(playback.currentStep + 1).toString().padStart(2, '0')}/${engine.steps.length.toString().padStart(2, '0')}` : '00/00'}
             </span>
           </div>
@@ -107,7 +107,7 @@ export default function App() {
             href="https://github.com/dmarman/sha256algorithm"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 rounded-[2px] border border-[#1f2937] bg-[#121620] px-2 py-0.5 text-[10px] text-[#94a3b8] hover:bg-[#1a2232] hover:text-white transition-colors"
+            className="flex items-center gap-1 rounded-[2px] border border-[#1f2937] bg-[#121620] px-2 py-0.5 text-[10px] text-[#94a3b8] hover:bg-[#1a2232] hover:text-white transition-colors font-medium"
           >
             <span>REF</span>
             <svg className="w-2.5 h-2.5 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -128,14 +128,14 @@ export default function App() {
           }`}
         >
           {sidebarOpen && (
-            <div className="space-y-4 min-w-[220px]">
+            <div className="space-y-3.5 min-w-[220px]">
               <div className="flex items-center justify-between pb-1 border-b border-[#1f2937]">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-[#64748b]">
+                <span className="text-[9px] font-medium uppercase tracking-wider text-[#64748b]">
                   INSTRUMENT NAVIGATOR
                 </span>
                 <button
                   onClick={toggleSidebar}
-                  className="rounded-[2px] p-0.5 text-[#64748b] hover:bg-[#121620] hover:text-[#f8fafc] text-xs"
+                  className="rounded-[2px] p-0.5 text-[#64748b] hover:bg-[#121620] hover:text-[#f8fafc] text-xs font-medium"
                   title="Collapse sidebar (Ctrl+B)"
                 >
                   «
@@ -149,7 +149,7 @@ export default function App() {
               />
 
               {engine.algorithm && (
-                <div className="pt-2 border-t border-[#1f2937]">
+                <div className="pt-1.5 border-t border-[#1f2937]">
                   <AlgorithmInfoPanel info={engine.algorithm.info} />
                 </div>
               )}
@@ -158,13 +158,13 @@ export default function App() {
         </aside>
 
         {/* ─── Main Content: Fluid Width (Takes 100% remaining space) ─── */}
-        <main className="flex-1 min-w-0 p-3 sm:p-4 overflow-y-auto space-y-3 transition-all duration-300">
+        <main className="flex-1 min-w-0 p-3 sm:p-3.5 overflow-y-auto space-y-2.5 transition-all duration-300">
           {/* Re-open Sidebar Floating Pill (when sidebar is hidden) */}
           {!sidebarOpen && (
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleSidebar}
-                className="inline-flex items-center gap-1.5 rounded-[2px] border border-[#38bdf8]/40 bg-[#0f1d2e] px-2 py-0.5 text-[10px] font-bold text-[#38bdf8] hover:bg-[#152238] hover:text-white transition-all shadow-none"
+                className="inline-flex items-center gap-1.5 rounded-[2px] border border-[#38bdf8]/40 bg-[#0f1d2e] px-2 py-0.5 text-[10px] font-medium text-[#38bdf8] hover:bg-[#152238] hover:text-white transition-all shadow-none"
               >
                 <span>»</span>
                 <span>EXPAND ALGORITHM REGISTRY</span>
@@ -189,18 +189,18 @@ export default function App() {
 
           {/* Phase Quick Jump Navigation */}
           {phases.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1 p-1.5 rounded-[2px] bg-[#0c1017] border border-[#1f2937] text-xs">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-[#64748b] mr-1.5">
+            <div className="flex flex-wrap items-center gap-1 p-1 rounded-[2px] bg-[#0c1017] border border-[#1f2937] text-xs">
+              <span className="text-[9px] font-medium uppercase tracking-wider text-[#64748b] mr-1">
                 JUMP TO PHASE:
               </span>
               {phases.map(({ phase, startIndex }) => (
                 <button
                   key={`${phase}-${startIndex}`}
                   onClick={() => playback.setCurrentStep(startIndex)}
-                  className={`rounded-[2px] px-2 py-0.5 text-[10px] font-mono font-bold uppercase transition-all ${
+                  className={`rounded-[2px] px-2 py-0.5 text-[9px] font-mono uppercase transition-all tabular-nums ${
                     currentStepData?.phase === phase
-                      ? 'bg-[#152238] text-[#38bdf8] border border-[#38bdf8]/60 ring-1 ring-[#38bdf8]/30'
-                      : 'bg-[#0e131b] text-[#94a3b8] hover:bg-[#141a24] hover:text-white border border-[#1f2937]'
+                      ? 'bg-[#152238] text-[#38bdf8] border border-[#38bdf8]/60 font-semibold ring-1 ring-[#38bdf8]/30'
+                      : 'bg-[#0e131b] text-[#94a3b8] hover:bg-[#141a24] hover:text-white border border-[#1f2937] font-medium'
                   }`}
                 >
                   {phase}

@@ -23,6 +23,29 @@ export const IV64 = [
   0x510e527fade682d1n, 0x9b05688c2b3e6c1fn, 0x1f83d9abfb41bd6bn, 0x5be0cd19137e2179n,
 ];
 
+export interface GCallDetail {
+  label: string;
+  stepType: 'column' | 'diagonal';
+  indices: [number, number, number, number];
+  inputs: {
+    va: string;
+    vb: string;
+    vc: string;
+    vd: string;
+    mx: string;
+    my: string;
+    xIdx: number;
+    yIdx: number;
+  };
+  outputs: {
+    va: string;
+    vb: string;
+    vc: string;
+    vd: string;
+  };
+  rotations: number[];
+}
+
 export function G32(v: number[], a: number, b: number, c: number, d: number, x: number, y: number) {
   v[a] = add32(v[a], v[b], x);
   v[d] = rightRotate32(v[d] ^ v[a], 16);
@@ -34,6 +57,49 @@ export function G32(v: number[], a: number, b: number, c: number, d: number, x: 
   v[b] = rightRotate32(v[b] ^ v[c], 7);
 }
 
+export function G32Detail(
+  v: number[],
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  x: number,
+  y: number,
+  xIdx: number,
+  yIdx: number,
+  stepType: 'column' | 'diagonal',
+): GCallDetail {
+  const inVa = uint32ToHex(v[a]);
+  const inVb = uint32ToHex(v[b]);
+  const inVc = uint32ToHex(v[c]);
+  const inVd = uint32ToHex(v[d]);
+
+  G32(v, a, b, c, d, x, y);
+
+  return {
+    label: `G(${a}, ${b}, ${c}, ${d})`,
+    stepType,
+    indices: [a, b, c, d],
+    inputs: {
+      va: inVa,
+      vb: inVb,
+      vc: inVc,
+      vd: inVd,
+      mx: uint32ToHex(x),
+      my: uint32ToHex(y),
+      xIdx,
+      yIdx,
+    },
+    outputs: {
+      va: uint32ToHex(v[a]),
+      vb: uint32ToHex(v[b]),
+      vc: uint32ToHex(v[c]),
+      vd: uint32ToHex(v[d]),
+    },
+    rotations: [16, 12, 8, 7],
+  };
+}
+
 export function G64(v: bigint[], a: number, b: number, c: number, d: number, x: bigint, y: bigint) {
   v[a] = add64(v[a], v[b], x);
   v[d] = rightRotate64(v[d] ^ v[a], 32);
@@ -43,6 +109,49 @@ export function G64(v: bigint[], a: number, b: number, c: number, d: number, x: 
   v[d] = rightRotate64(v[d] ^ v[a], 16);
   v[c] = add64(v[c], v[d]);
   v[b] = rightRotate64(v[b] ^ v[c], 63);
+}
+
+export function G64Detail(
+  v: bigint[],
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  x: bigint,
+  y: bigint,
+  xIdx: number,
+  yIdx: number,
+  stepType: 'column' | 'diagonal',
+): GCallDetail {
+  const inVa = uint64ToHex(v[a]);
+  const inVb = uint64ToHex(v[b]);
+  const inVc = uint64ToHex(v[c]);
+  const inVd = uint64ToHex(v[d]);
+
+  G64(v, a, b, c, d, x, y);
+
+  return {
+    label: `G(${a}, ${b}, ${c}, ${d})`,
+    stepType,
+    indices: [a, b, c, d],
+    inputs: {
+      va: inVa,
+      vb: inVb,
+      vc: inVc,
+      vd: inVd,
+      mx: uint64ToHex(x),
+      my: uint64ToHex(y),
+      xIdx,
+      yIdx,
+    },
+    outputs: {
+      va: uint64ToHex(v[a]),
+      vb: uint64ToHex(v[b]),
+      vc: uint64ToHex(v[c]),
+      vd: uint64ToHex(v[d]),
+    },
+    rotations: [32, 24, 16, 63],
+  };
 }
 
 export function formatState32(v: number[]) {

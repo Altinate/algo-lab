@@ -4,16 +4,6 @@
  * This engine implements the full SHA-256 algorithm with step-by-step
  * intermediate state capture for visualization. SHA-224 reuses this
  * engine with different initial hash values and truncated output.
- *
- * Algorithm overview (FIPS 180-4):
- * 1. Pre-processing: Pad the message to a multiple of 512 bits
- * 2. Parse: Break padded message into 512-bit blocks
- * 3. For each block:
- *    a. Prepare message schedule W[0..63]
- *    b. Initialize working variables a..h from current hash
- *    c. Run 64 compression rounds
- *    d. Update hash values
- * 4. Produce final digest by concatenating hash values
  */
 
 import type { ComputationStep } from '../types';
@@ -28,7 +18,20 @@ import {
   formatBinaryGroups,
 } from '../utils';
 import { K } from './constants';
-import { sigma0, sigma1, bigSigma0, bigSigma1, ch, maj } from './operations';
+import {
+  sigma0,
+  sigma1,
+  bigSigma0,
+  bigSigma1,
+  ch,
+  maj,
+  sigma0Breakdown,
+  sigma1Breakdown,
+  bigSigma0Breakdown,
+  bigSigma1Breakdown,
+  chBreakdown,
+  majBreakdown,
+} from './operations';
 
 export interface Sha256EngineConfig {
   /** Initial hash values H[0..7] */
@@ -37,6 +40,15 @@ export interface Sha256EngineConfig {
   outputWords: number;
   /** Algorithm name for step descriptions */
   algorithmName: string;
+}
+
+/** Helper to format 32-bit word for display */
+function formatWord(w: number) {
+  return {
+    value: w >>> 0,
+    hex: uint32ToHex(w),
+    binary: uint32ToBinary(w),
+  };
 }
 
 /**
@@ -48,6 +60,13 @@ export function sha256Engine(
 ): { digest: string; steps: ComputationStep[] } {
   const steps: ComputationStep[] = [];
 
+  // Full constants table formatted for persistent 3-column view
+  const fullConstants = K.map((kVal, idx) => ({
+    index: idx,
+    hex: uint32ToHex(kVal),
+    binary: uint32ToBinary(kVal),
+  }));
+
   // ─── Step 1: Input Encoding ──────────────────────────────────────────
   const inputBytes = stringToBytes(input);
   const inputBinary = bytesToBinary(inputBytes);
@@ -56,23 +75,20 @@ export function sha256Engine(
     id: 'input-encoding',
     title: 'Input Encoding',
     phase: 'Pre-processing',
-    description: `Convert the input string "${input || '(empty)'}" to its binary representation using UTF-8 encoding. Each character becomes 8 bits (one byte).`,
+    description: `Convert the input string "${input || '(empty)'}" to its binary representation using UTF-8 encoding. Each character becomes 8 bits (one byte). Total: ${inputBytes.length} bytes (${inputBinary.length} bits).`,
     data: {
       input: input || '(empty string)',
       bytes: Array.from(inputBytes),
       binary: formatBinaryGroups(inputBinary),
       hex: bytesToHex(inputBytes),
       bitLength: inputBinary.length,
+      constants: fullConstants,
     },
     visualizationType: 'binary-transform',
   });
 
   // ─── Step 2: Padding ─────────────────────────────────────────────────
-  // Pad to a multiple of 512 bits:
-  //   message + '1' + zeros + 64-bit big-endian length
   const msgBitLen = inputBytes.length * 8;
-  // Calculate padding length
-  // We need: (msgBytes + 1 + paddingZeroBytes + 8) % 64 === 0
   const msgBytes = inputBytes.length;
   let paddingZeroBytes = 64 - ((msgBytes + 1 + 8) % 64);
   if (paddingZeroBytes === 64) paddingZeroBytes = 0;
@@ -80,9 +96,8 @@ export function sha256Engine(
 
   const paddedBytes = new Uint8Array(totalLen);
   paddedBytes.set(inputBytes);
-  paddedBytes[msgBytes] = 0x80; // append '1' bit followed by 7 zero bits
+  paddedBytes[msgBytes] = 0x80;
 
-  // Append 64-bit big-endian representation of original message length in bits
   const bitLenHi = Math.floor(msgBitLen / 0x100000000);
   const bitLenLo = msgBitLen >>> 0;
   const dv = new DataView(paddedBytes.buffer);
@@ -105,6 +120,7 @@ export function sha256Engine(
       paddedHex: bytesToHex(paddedBytes),
       totalBits: totalLen * 8,
       totalBlocks: totalLen / 64,
+      constants: fullConstants,
     },
     visualizationType: 'binary-transform',
   });
@@ -117,7 +133,7 @@ export function sha256Engine(
     const blockView = new DataView(paddedBytes.buffer, b * 64, 64);
     const words = new Uint32Array(16);
     for (let i = 0; i < 16; i++) {
-      words[i] = blockView.getUint32(i * 4, false); // big-endian
+      words[i] = blockView.getUint32(i * 4, false);
     }
     blocks.push(words);
 
@@ -125,7 +141,7 @@ export function sha256Engine(
       id: `block-${b}`,
       title: `Message Block ${b + 1} of ${numBlocks}`,
       phase: 'Pre-processing',
-      description: `Parse the padded message into ${numBlocks} block(s) of 512 bits (64 bytes). Each block is divided into 16 words of 32 bits each (big-endian byte order). This is block ${b + 1}.`,
+      description: `Parse block ${b + 1} of ${numBlocks} (512 bits / 64 bytes). It is divided into 16 32-bit big-endian words (W[0]..W[15]).`,
       data: {
         blockIndex: b,
         words: Array.from(words).map((w, i) => ({
@@ -133,6 +149,7 @@ export function sha256Engine(
           hex: uint32ToHex(w),
           binary: uint32ToBinary(w),
         })),
+        constants: fullConstants,
       },
       visualizationType: 'binary-transform',
     });
@@ -145,13 +162,14 @@ export function sha256Engine(
     id: 'init-hash',
     title: 'Initial Hash Values',
     phase: 'Pre-processing',
-    description: `Initialize the 8 working hash values H[0]..H[7] with the ${config.algorithmName} initial constants. These are the first 32 bits of the fractional parts of the square roots of the first 8 prime numbers.`,
+    description: `Initialize the 8 working hash values H[0]..H[7] with the ${config.algorithmName} initial constants.`,
     data: {
       hashValues: H.map((h, i) => ({
         label: `H[${i}]`,
         hex: uint32ToHex(h),
         binary: uint32ToBinary(h),
       })),
+      constants: fullConstants,
     },
     visualizationType: 'generic',
   });
@@ -164,90 +182,118 @@ export function sha256Engine(
     // ─── Message Schedule W[0..63] ───────────────────────────────────
     const W = new Uint32Array(64);
 
-    // W[0..15] = message block words
+    // Initial words W[0..15]
     for (let i = 0; i < 16; i++) {
       W[i] = block[i];
     }
 
-    // W[16..63] computed from previous W values
+    // Helper to get persistent schedule state up to index `computedUpTo`
+    const getScheduleState = (computedUpTo: number, activeIdx?: number) => {
+      return Array.from({ length: 64 }, (_, idx) => {
+        const isComputed = idx <= computedUpTo;
+        const val = isComputed ? W[idx] : 0;
+        return {
+          index: idx,
+          hex: uint32ToHex(val),
+          binary: uint32ToBinary(val),
+          computed: isComputed,
+          active: idx === activeIdx,
+        };
+      });
+    };
+
+    // W[16..63] Expansion with full step capturing
     for (let i = 16; i < 64; i++) {
-      const s0 = sigma0(W[i - 15]);
-      const s1 = sigma1(W[i - 2]);
+      const s0Detail = sigma0Breakdown(W[i - 15]);
+      const s1Detail = sigma1Breakdown(W[i - 2]);
+      const s0 = s0Detail.result;
+      const s1 = s1Detail.result;
       W[i] = add32(W[i - 16], s0, W[i - 7], s1);
 
-      // Only push steps for a subset to avoid overwhelming the user
-      // Show first few, some middle, and last few of the expansion
-      if (i <= 19 || i === 32 || i === 48 || i >= 61) {
-        steps.push({
-          id: `block-${b}-schedule-${i}`,
-          title: `Message Schedule W[${i}]${blockLabel}`,
-          phase: 'Message Schedule',
-          description: `Expand the message schedule by computing W[${i}] from previous W values:\nW[${i}] = σ₁(W[${i - 2}]) + W[${i - 7}] + σ₀(W[${i - 15}]) + W[${i - 16}]\n\nσ₀ applies ROTR⁷, ROTR¹⁸, and SHR³ then XORs the results.\nσ₁ applies ROTR¹⁷, ROTR¹⁹, and SHR¹⁰ then XORs the results.`,
-          data: {
-            roundIndex: i,
-            wMinus16: { label: `W[${i - 16}]`, hex: uint32ToHex(W[i - 16]) },
-            wMinus15: { label: `W[${i - 15}]`, hex: uint32ToHex(W[i - 15]) },
-            wMinus7: { label: `W[${i - 7}]`, hex: uint32ToHex(W[i - 7]) },
-            wMinus2: { label: `W[${i - 2}]`, hex: uint32ToHex(W[i - 2]) },
-            sigma0Value: { label: `σ₀(W[${i - 15}])`, hex: uint32ToHex(s0) },
-            sigma1Value: { label: `σ₁(W[${i - 2}])`, hex: uint32ToHex(s1) },
-            result: { label: `W[${i}]`, hex: uint32ToHex(W[i]) },
+      steps.push({
+        id: `block-${b}-schedule-${i}`,
+        title: `Expand Message Schedule: W[${i}]${blockLabel}`,
+        phase: 'Message Schedule',
+        description: `Compute W[${i}] = σ₁(W[${i - 2}]) + W[${i - 7}] + σ₀(W[${i - 15}]) + W[${i - 16}] (mod 2³²).\n\nσ₀ uses ROTR⁷ ⊕ ROTR¹⁸ ⊕ SHR³ on W[${i - 15}].\nσ₁ uses ROTR¹⁷ ⊕ ROTR¹⁹ ⊕ SHR¹⁰ on W[${i - 2}].`,
+        data: {
+          roundIndex: i,
+          scheduleIndex: i,
+          schedule: getScheduleState(i, i),
+          constants: fullConstants,
+          // Expansion operands
+          wMinus16: formatWord(W[i - 16]),
+          wMinus15: formatWord(W[i - 15]),
+          wMinus7: formatWord(W[i - 7]),
+          wMinus2: formatWord(W[i - 2]),
+          // sigma0 breakdown
+          sigma0: {
+            input: formatWord(W[i - 15]),
+            rot7: formatWord(s0Detail.rot7),
+            rot18: formatWord(s0Detail.rot18),
+            shr3: formatWord(s0Detail.shr3),
+            result: formatWord(s0Detail.result),
           },
-          visualizationType: 'round-computation',
-        });
-      }
+          // sigma1 breakdown
+          sigma1: {
+            input: formatWord(W[i - 2]),
+            rot17: formatWord(s1Detail.rot17),
+            rot19: formatWord(s1Detail.rot19),
+            shr10: formatWord(s1Detail.shr10),
+            result: formatWord(s1Detail.result),
+          },
+          result: formatWord(W[i]),
+        },
+        visualizationType: 'round-computation',
+      });
     }
 
-    // Show complete schedule summary
-    steps.push({
-      id: `block-${b}-schedule-complete`,
-      title: `Message Schedule Complete${blockLabel}`,
-      phase: 'Message Schedule',
-      description: `The message schedule W[0..63] is now fully expanded. W[0..15] came directly from the message block, and W[16..63] were computed using the σ₀ and σ₁ functions to create diffusion.`,
-      data: {
-        schedule: Array.from(W).map((w, i) => ({
-          index: i,
-          hex: uint32ToHex(w),
-        })),
-      },
-      visualizationType: 'generic',
-    });
+    // Complete schedule ready
+    const fullSchedule = getScheduleState(63);
 
     // ─── Initialize working variables ────────────────────────────────
     let a = H[0], b_ = H[1], c = H[2], d = H[3];
     let e = H[4], f = H[5], g = H[6], h = H[7];
 
+    const currentVars = () => [
+      { label: 'a', ...formatWord(a) },
+      { label: 'b', ...formatWord(b_) },
+      { label: 'c', ...formatWord(c) },
+      { label: 'd', ...formatWord(d) },
+      { label: 'e', ...formatWord(e) },
+      { label: 'f', ...formatWord(f) },
+      { label: 'g', ...formatWord(g) },
+      { label: 'h', ...formatWord(h) },
+    ];
+
     steps.push({
       id: `block-${b}-init-vars`,
       title: `Initialize Working Variables${blockLabel}`,
       phase: 'Compression',
-      description: `Set the 8 working variables (a through h) to the current hash values H[0]..H[7]. These variables will be transformed through 64 compression rounds.`,
+      description: `Set working variables (a through h) to current hash values H[0]..H[7].`,
       data: {
-        variables: [
-          { label: 'a', hex: uint32ToHex(a) },
-          { label: 'b', hex: uint32ToHex(b_) },
-          { label: 'c', hex: uint32ToHex(c) },
-          { label: 'd', hex: uint32ToHex(d) },
-          { label: 'e', hex: uint32ToHex(e) },
-          { label: 'f', hex: uint32ToHex(f) },
-          { label: 'g', hex: uint32ToHex(g) },
-          { label: 'h', hex: uint32ToHex(h) },
-        ],
+        variables: currentVars(),
+        schedule: fullSchedule,
+        constants: fullConstants,
       },
       visualizationType: 'round-computation',
     });
 
     // ─── 64 Compression Rounds ───────────────────────────────────────
     for (let i = 0; i < 64; i++) {
-      const S1 = bigSigma1(e);
-      const chValue = ch(e, f, g);
+      const s1Detail = bigSigma1Breakdown(e);
+      const chDetail = chBreakdown(e, f, g);
+      const S1 = s1Detail.result;
+      const chValue = chDetail.result;
       const T1 = add32(h, S1, chValue, K[i], W[i]);
-      const S0 = bigSigma0(a);
-      const majValue = maj(a, b_, c);
+
+      const s0Detail = bigSigma0Breakdown(a);
+      const majDetail = majBreakdown(a, b_, c);
+      const S0 = s0Detail.result;
+      const majValue = majDetail.result;
       const T2 = add32(S0, majValue);
 
-      // Save previous values for visualization
       const prev = { a, b: b_, c, d, e, f, g, h };
+      const prevVariables = currentVars();
 
       // Update working variables
       h = g;
@@ -259,45 +305,72 @@ export function sha256Engine(
       b_ = a;
       a = add32(T1, T2);
 
+      const newVariables = currentVars();
+
       steps.push({
         id: `block-${b}-round-${i}`,
-        title: `Compression Round ${i}${blockLabel}`,
+        title: `Compression Round ${i} of 64${blockLabel}`,
         phase: 'Compression',
-        description: `Round ${i}: Compute T1 and T2, then shift all working variables.\n\nT1 = h + Σ₁(e) + Ch(e,f,g) + K[${i}] + W[${i}]\nT2 = Σ₀(a) + Maj(a,b,c)\n\nCh (Choice): for each bit, if e=1 pick f, else pick g.\nMaj (Majority): for each bit, output the majority of a,b,c.\nΣ₀/Σ₁ (Big Sigma): rotation-based mixing functions.`,
+        description: `Round ${i}: Compute Temp1 and Temp2 with bit-level non-linear functions (Σ₁, Ch, Σ₀, Maj), update a and e, and shift registers b..d and f..h.`,
         data: {
           roundIndex: i,
-          // Inputs
-          K: { label: `K[${i}]`, hex: uint32ToHex(K[i]) },
-          W: { label: `W[${i}]`, hex: uint32ToHex(W[i]) },
-          // Intermediate computations
-          bigSigma1: { label: 'Σ₁(e)', hex: uint32ToHex(S1) },
-          ch: { label: 'Ch(e,f,g)', hex: uint32ToHex(chValue) },
-          T1: { label: 'T1', hex: uint32ToHex(T1) },
-          bigSigma0: { label: 'Σ₀(a)', hex: uint32ToHex(S0) },
-          maj: { label: 'Maj(a,b,c)', hex: uint32ToHex(majValue) },
-          T2: { label: 'T2', hex: uint32ToHex(T2) },
-          // Previous state
-          prevVariables: [
-            { label: 'a', hex: uint32ToHex(prev.a) },
-            { label: 'b', hex: uint32ToHex(prev.b) },
-            { label: 'c', hex: uint32ToHex(prev.c) },
-            { label: 'd', hex: uint32ToHex(prev.d) },
-            { label: 'e', hex: uint32ToHex(prev.e) },
-            { label: 'f', hex: uint32ToHex(prev.f) },
-            { label: 'g', hex: uint32ToHex(prev.g) },
-            { label: 'h', hex: uint32ToHex(prev.h) },
-          ],
-          // New state
-          newVariables: [
-            { label: 'a', hex: uint32ToHex(a) },
-            { label: 'b', hex: uint32ToHex(b_) },
-            { label: 'c', hex: uint32ToHex(c) },
-            { label: 'd', hex: uint32ToHex(d) },
-            { label: 'e', hex: uint32ToHex(e) },
-            { label: 'f', hex: uint32ToHex(f) },
-            { label: 'g', hex: uint32ToHex(g) },
-            { label: 'h', hex: uint32ToHex(h) },
-          ],
+          schedule: fullSchedule.map((item) => ({
+            ...item,
+            active: item.index === i,
+          })),
+          constants: fullConstants.map((item) => ({
+            ...item,
+            active: item.index === i,
+          })),
+          activeK: { index: i, ...formatWord(K[i]) },
+          activeW: { index: i, ...formatWord(W[i]) },
+          prevVariables,
+          newVariables,
+          // Temp1 Details
+          temp1: {
+            h: formatWord(prev.h),
+            sigma1: {
+              input: formatWord(prev.e),
+              rot6: formatWord(s1Detail.rot6),
+              rot11: formatWord(s1Detail.rot11),
+              rot25: formatWord(s1Detail.rot25),
+              result: formatWord(S1),
+            },
+            ch: {
+              e: formatWord(prev.e),
+              f: formatWord(prev.f),
+              g: formatWord(prev.g),
+              eAndF: formatWord(chDetail.eAndF),
+              notEAndG: formatWord(chDetail.notEAndG),
+              result: formatWord(chValue),
+            },
+            k: formatWord(K[i]),
+            w: formatWord(W[i]),
+            result: formatWord(T1),
+          },
+          // Temp2 Details
+          temp2: {
+            sigma0: {
+              input: formatWord(prev.a),
+              rot2: formatWord(s0Detail.rot2),
+              rot13: formatWord(s0Detail.rot13),
+              rot22: formatWord(s0Detail.rot22),
+              result: formatWord(S0),
+            },
+            maj: {
+              a: formatWord(prev.a),
+              b: formatWord(prev.b),
+              c: formatWord(prev.c),
+              aAndB: formatWord(majDetail.aAndB),
+              aAndC: formatWord(majDetail.aAndC),
+              bAndC: formatWord(majDetail.bAndC),
+              result: formatWord(majValue),
+            },
+            result: formatWord(T2),
+          },
+          // Updates
+          updatedA: { formula: 'T1 + T2', ...formatWord(a) },
+          updatedE: { formula: 'd + T1', ...formatWord(e) },
         },
         visualizationType: 'round-computation',
       });
@@ -318,13 +391,18 @@ export function sha256Engine(
       id: `block-${b}-update-hash`,
       title: `Update Hash Values${blockLabel}`,
       phase: 'Compression',
-      description: `Add the compressed working variables to the current hash values:\nH[i] = H[i] + letter[i] (mod 2³²)\n\nThis combines the result of 64 rounds of compression with the previous hash state.`,
+      description: `Add compressed working variables into previous hash state: H[i] = H[i] + variable[i] (mod 2³²).`,
       data: {
+        schedule: fullSchedule,
+        constants: fullConstants,
         updates: Array.from({ length: 8 }, (_, i) => ({
           label: `H[${i}]`,
           prevHex: uint32ToHex(prevH[i]),
+          prevBinary: uint32ToBinary(prevH[i]),
           addHex: uint32ToHex([a, b_, c, d, e, f, g, h][i]),
+          addBinary: uint32ToBinary([a, b_, c, d, e, f, g, h][i]),
           newHex: uint32ToHex(H[i]),
+          newBinary: uint32ToBinary(H[i]),
         })),
       },
       visualizationType: 'round-computation',
@@ -344,9 +422,11 @@ export function sha256Engine(
       hashValues: digestWords.map((h, i) => ({
         label: `H[${i}]`,
         hex: uint32ToHex(h),
+        binary: uint32ToBinary(h),
       })),
       digest,
       digestFormatted: formatHexGroups(digest),
+      constants: fullConstants,
     },
     visualizationType: 'final-digest',
   });

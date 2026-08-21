@@ -83,7 +83,7 @@ export default function App() {
         </div>
 
         {/* Right: Active Target & Cycle Counter */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2">
           {engine.algorithm && (
             <div className="flex items-center gap-1.5 rounded-[2px] bg-[#0e131b] px-2 py-0.5 border border-[#1f2937] text-[11px] tabular-nums">
               <span className="text-[#64748b] hidden sm:inline text-[9px] font-medium">TARGET:</span>
@@ -96,24 +96,12 @@ export default function App() {
             </div>
           )}
 
-          <div className="hidden md:flex items-center gap-1 text-[11px] text-[#64748b] bg-[#0e131b] px-2 py-0.5 rounded-[2px] border border-[#1f2937] tabular-nums">
+          <div className="flex items-center gap-1 text-[11px] text-[#64748b] bg-[#0e131b] px-2 py-0.5 rounded-[2px] border border-[#1f2937] tabular-nums">
             <span className="text-[9px] font-medium">CYCLE:</span>
             <span className="font-semibold text-[#e5a93b] phosphor-amber">
               {engine.steps.length > 0 ? `${(playback.currentStep + 1).toString().padStart(2, '0')}/${engine.steps.length.toString().padStart(2, '0')}` : '00/00'}
             </span>
           </div>
-
-          <a
-            href="https://github.com/dmarman/sha256algorithm"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 rounded-[2px] border border-[#1f2937] bg-[#121620] px-2 py-0.5 text-[10px] text-[#94a3b8] hover:bg-[#1a2232] hover:text-white transition-colors font-medium"
-          >
-            <span>REF</span>
-            <svg className="w-2.5 h-2.5 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          </a>
         </div>
       </header>
 

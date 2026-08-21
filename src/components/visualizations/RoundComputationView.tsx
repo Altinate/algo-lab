@@ -39,6 +39,11 @@ export default function RoundComputationView({ step }: Props) {
   const initVars = data.variables as VariableItem[] | undefined;
   const displayVars = newVars || prevVars || initVars || [];
 
+  // Detect word size (32-bit vs 64-bit)
+  const is64Bit = displayVars.length > 0 ? (displayVars[0].hex.length > 8) : false;
+  const wordBits = is64Bit ? 64 : 32;
+  const wordBytes = is64Bit ? 8 : 4;
+
   // Extract schedule items (Left Column)
   const schedule = (data.schedule as ScheduleItem[] | undefined) || [];
 
@@ -47,7 +52,7 @@ export default function RoundComputationView({ step }: Props) {
   const activeK = data.activeK as ConstantItem | undefined;
   const activeW = data.activeW as ScheduleItem | undefined;
 
-  // SHA-256 / SHA-2 sub-computation details
+  // SHA-256 / SHA-512 / SHA-2 sub-computation details
   const temp1 = data.temp1 as any;
   const temp2 = data.temp2 as any;
   const sigma0Expansion = data.sigma0 as any;
@@ -83,7 +88,7 @@ export default function RoundComputationView({ step }: Props) {
           <div className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 bg-[#38bdf8]" />
             <span className="text-[9px] uppercase tracking-wider text-[#64748b] font-medium">
-              3-BUS STATE INSPECTOR
+              3-BUS STATE INSPECTOR ({is64Bit ? '64-BIT PIPELINE' : '32-BIT PIPELINE'})
             </span>
           </div>
           {roundIdx !== undefined && (
@@ -114,7 +119,7 @@ export default function RoundComputationView({ step }: Props) {
               </span>
             </div>
             <span className="text-[8px] text-[#475569] tabular-nums font-medium">
-              {schedule.length || 0} WORDS
+              {schedule.length || 0} WORDS ({schedule.length * wordBits} BITS)
             </span>
           </div>
 
@@ -122,7 +127,7 @@ export default function RoundComputationView({ step }: Props) {
             <div className="overflow-y-auto space-y-0.5 pr-0.5 flex-1 font-mono text-[11px]">
               {schedule.map((item) => {
                 const isActive = item.active || (roundIdx !== undefined && item.index === roundIdx && !md5Step && !sha1Step);
-                const offset = (item.index * 4).toString(16).padStart(2, '0').toUpperCase();
+                const offset = (item.index * wordBytes).toString(16).padStart(3, '0').toUpperCase();
                 const prefix = schedule.length <= 16 ? 'M' : 'W';
                 return (
                   <div
@@ -165,17 +170,17 @@ export default function RoundComputationView({ step }: Props) {
         {/* COLUMN 2: HARDWARE ALU & REGISTER BANK */}
         {/* ========================================================================= */}
         <div className="space-y-2.5 min-w-0">
-          {/* Dynamic Register Bank (Registers a–h, a–e for SHA-1, a–d for MD5) */}
+          {/* Dynamic Register Bank (Registers a–h, a–e, a–d; 32-bit or 64-bit) */}
           <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2">
             <div className="flex items-center justify-between mb-1.5 pb-1 border-b border-[#1f2937]">
               <div className="flex items-center gap-1.5">
                 <span className="h-1 w-1 bg-[#e5a93b]" />
                 <span className="text-[9px] font-semibold uppercase tracking-wider text-[#e5a93b]">
-                  {displayVars.length > 0 ? `${displayVars.length * 32}-BIT REGISTER BANK (${displayVars.map(v => v.label).join(', ')})` : 'REGISTER BANK'}
+                  {displayVars.length > 0 ? `${wordBits}-BIT REGISTER BANK (${displayVars.map(v => v.label).join(', ')})` : 'REGISTER BANK'}
                 </span>
               </div>
               <span className="text-[8px] text-[#475569] uppercase font-medium">
-                WIDTH: {displayVars.length * 32}-BIT BUS
+                WIDTH: {displayVars.length * wordBits}-BIT BUS
               </span>
             </div>
 
@@ -199,7 +204,7 @@ export default function RoundComputationView({ step }: Props) {
             </div>
           </div>
 
-          {/* SHA-256 ALU Circuit Flow Diagram (if temp1 or temp2 present) */}
+          {/* SHA-2 (SHA-256 / SHA-512) ALU Circuit Flow Diagram */}
           {(temp1 || temp2) && (
             <CompressionFlowDiagram
               prevVariables={prevVars}
@@ -471,7 +476,7 @@ export default function RoundComputationView({ step }: Props) {
           )}
 
           {/* ===================================================================== */}
-          {/* SHA-256 Temp1 Sub-Operations */}
+          {/* SHA-2 (SHA-256 / SHA-512) Temp1 Sub-Operations */}
           {/* ===================================================================== */}
           {temp1 && (
             <div className="space-y-2 rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5">
@@ -488,7 +493,9 @@ export default function RoundComputationView({ step }: Props) {
               <div className="space-y-0.5">
                 <div className="text-[9px] font-medium uppercase tracking-wider text-[#fb923c] flex items-center gap-1">
                   <span className="h-1 w-1 bg-[#fb923c]" />
-                  <span>1. BARREL SHIFTER: Σ₁(e) = ROTR⁶(e) ⊕ ROTR¹¹(e) ⊕ ROTR²⁵(e)</span>
+                  <span>
+                    1. BARREL SHIFTER: Σ₁(e) = {is64Bit ? 'ROTR¹⁴(e) ⊕ ROTR¹⁸(e) ⊕ ROTR⁴¹(e)' : 'ROTR⁶(e) ⊕ ROTR¹¹(e) ⊕ ROTR²⁵(e)'}
+                  </span>
                 </div>
                 <BitwiseOperationRow
                   label="REG.e"
@@ -496,27 +503,55 @@ export default function RoundComputationView({ step }: Props) {
                   hex={temp1.sigma1.input.hex}
                   opType="input"
                 />
-                <BitwiseOperationRow
-                  label="ROTR⁶(e)"
-                  binary={temp1.sigma1.rot6.binary}
-                  hex={temp1.sigma1.rot6.hex}
-                  opType="rot"
-                  tag="ROTR 6"
-                />
-                <BitwiseOperationRow
-                  label="ROTR¹¹(e)"
-                  binary={temp1.sigma1.rot11.binary}
-                  hex={temp1.sigma1.rot11.hex}
-                  opType="rot"
-                  tag="ROTR 11"
-                />
-                <BitwiseOperationRow
-                  label="ROTR²⁵(e)"
-                  binary={temp1.sigma1.rot25.binary}
-                  hex={temp1.sigma1.rot25.hex}
-                  opType="rot"
-                  tag="ROTR 25"
-                />
+                {is64Bit ? (
+                  <>
+                    <BitwiseOperationRow
+                      label="ROTR¹⁴(e)"
+                      binary={temp1.sigma1.rot14.binary}
+                      hex={temp1.sigma1.rot14.hex}
+                      opType="rot"
+                      tag="ROTR 14"
+                    />
+                    <BitwiseOperationRow
+                      label="ROTR¹⁸(e)"
+                      binary={temp1.sigma1.rot18.binary}
+                      hex={temp1.sigma1.rot18.hex}
+                      opType="rot"
+                      tag="ROTR 18"
+                    />
+                    <BitwiseOperationRow
+                      label="ROTR⁴¹(e)"
+                      binary={temp1.sigma1.rot41.binary}
+                      hex={temp1.sigma1.rot41.hex}
+                      opType="rot"
+                      tag="ROTR 41"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <BitwiseOperationRow
+                      label="ROTR⁶(e)"
+                      binary={temp1.sigma1.rot6.binary}
+                      hex={temp1.sigma1.rot6.hex}
+                      opType="rot"
+                      tag="ROTR 6"
+                    />
+                    <BitwiseOperationRow
+                      label="ROTR¹¹(e)"
+                      binary={temp1.sigma1.rot11.binary}
+                      hex={temp1.sigma1.rot11.hex}
+                      opType="rot"
+                      tag="ROTR 11"
+                    />
+                    <BitwiseOperationRow
+                      label="ROTR²⁵(e)"
+                      binary={temp1.sigma1.rot25.binary}
+                      hex={temp1.sigma1.rot25.hex}
+                      opType="rot"
+                      tag="ROTR 25"
+                    />
+                  </>
+                )}
                 <BitwiseOperationRow
                   label="Σ₁(e) OUT"
                   binary={temp1.sigma1.result.binary}
@@ -561,7 +596,7 @@ export default function RoundComputationView({ step }: Props) {
               <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
                 <div className="text-[9px] font-medium uppercase tracking-wider text-[#c084fc] flex items-center gap-1">
                   <span className="h-1 w-1 bg-[#c084fc]" />
-                  <span>3. ALU 5-TERM ACCUMULATOR: Temp1 = h + Σ₁(e) + Ch + Kᵢ + Wᵢ (mod 2³²)</span>
+                  <span>3. ALU 5-TERM ACCUMULATOR: Temp1 = h + Σ₁(e) + Ch + Kᵢ + Wᵢ (mod 2{is64Bit ? '⁶⁴' : '³²'})</span>
                 </div>
                 <BitwiseOperationRow
                   label="REG.h"
@@ -605,7 +640,7 @@ export default function RoundComputationView({ step }: Props) {
             </div>
           )}
 
-          {/* SHA-256 Temp2 Sub-Operations */}
+          {/* SHA-2 (SHA-256 / SHA-512) Temp2 Sub-Operations */}
           {temp2 && (
             <div className="space-y-2 rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5">
               <div className="flex items-center justify-between border-b border-[#1f2937] pb-1">
@@ -621,7 +656,9 @@ export default function RoundComputationView({ step }: Props) {
               <div className="space-y-0.5">
                 <div className="text-[9px] font-medium uppercase tracking-wider text-[#fb923c] flex items-center gap-1">
                   <span className="h-1 w-1 bg-[#fb923c]" />
-                  <span>1. BARREL SHIFTER: Σ₀(a) = ROTR²(a) ⊕ ROTR¹³(a) ⊕ ROTR²²(a)</span>
+                  <span>
+                    1. BARREL SHIFTER: Σ₀(a) = {is64Bit ? 'ROTR²⁸(a) ⊕ ROTR³⁴(a) ⊕ ROTR³⁹(a)' : 'ROTR²(a) ⊕ ROTR¹³(a) ⊕ ROTR²²(a)'}
+                  </span>
                 </div>
                 <BitwiseOperationRow
                   label="REG.a"
@@ -629,27 +666,55 @@ export default function RoundComputationView({ step }: Props) {
                   hex={temp2.sigma0.input.hex}
                   opType="input"
                 />
-                <BitwiseOperationRow
-                  label="ROTR²(a)"
-                  binary={temp2.sigma0.rot2.binary}
-                  hex={temp2.sigma0.rot2.hex}
-                  opType="rot"
-                  tag="ROTR 2"
-                />
-                <BitwiseOperationRow
-                  label="ROTR¹³(a)"
-                  binary={temp2.sigma0.rot13.binary}
-                  hex={temp2.sigma0.rot13.hex}
-                  opType="rot"
-                  tag="ROTR 13"
-                />
-                <BitwiseOperationRow
-                  label="ROTR²²(a)"
-                  binary={temp2.sigma0.rot22.binary}
-                  hex={temp2.sigma0.rot22.hex}
-                  opType="rot"
-                  tag="ROTR 22"
-                />
+                {is64Bit ? (
+                  <>
+                    <BitwiseOperationRow
+                      label="ROTR²⁸(a)"
+                      binary={temp2.sigma0.rot28.binary}
+                      hex={temp2.sigma0.rot28.hex}
+                      opType="rot"
+                      tag="ROTR 28"
+                    />
+                    <BitwiseOperationRow
+                      label="ROTR³⁴(a)"
+                      binary={temp2.sigma0.rot34.binary}
+                      hex={temp2.sigma0.rot34.hex}
+                      opType="rot"
+                      tag="ROTR 34"
+                    />
+                    <BitwiseOperationRow
+                      label="ROTR³⁹(a)"
+                      binary={temp2.sigma0.rot39.binary}
+                      hex={temp2.sigma0.rot39.hex}
+                      opType="rot"
+                      tag="ROTR 39"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <BitwiseOperationRow
+                      label="ROTR²(a)"
+                      binary={temp2.sigma0.rot2.binary}
+                      hex={temp2.sigma0.rot2.hex}
+                      opType="rot"
+                      tag="ROTR 2"
+                    />
+                    <BitwiseOperationRow
+                      label="ROTR¹³(a)"
+                      binary={temp2.sigma0.rot13.binary}
+                      hex={temp2.sigma0.rot13.hex}
+                      opType="rot"
+                      tag="ROTR 13"
+                    />
+                    <BitwiseOperationRow
+                      label="ROTR²²(a)"
+                      binary={temp2.sigma0.rot22.binary}
+                      hex={temp2.sigma0.rot22.hex}
+                      opType="rot"
+                      tag="ROTR 22"
+                    />
+                  </>
+                )}
                 <BitwiseOperationRow
                   label="Σ₀(a) OUT"
                   binary={temp2.sigma0.result.binary}
@@ -701,7 +766,7 @@ export default function RoundComputationView({ step }: Props) {
               <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
                 <div className="text-[9px] font-medium uppercase tracking-wider text-[#38bdf8] flex items-center gap-1">
                   <span className="h-1 w-1 bg-[#38bdf8]" />
-                  <span>3. ALU 2-TERM ACCUMULATOR: Temp2 = Σ₀(a) + Maj(a,b,c) (mod 2³²)</span>
+                  <span>3. ALU 2-TERM ACCUMULATOR: Temp2 = Σ₀(a) + Maj(a,b,c) (mod 2{is64Bit ? '⁶⁴' : '³²'})</span>
                 </div>
                 <BitwiseOperationRow
                   label="Σ₀(a)"
@@ -744,7 +809,7 @@ export default function RoundComputationView({ step }: Props) {
               {/* Lower Sigma 0 */}
               <div className="space-y-0.5">
                 <div className="text-[9px] font-medium uppercase tracking-wider text-[#fb923c]">
-                  1. LOWER SIGMA 0: σ₀(W[i-15]) = ROTR⁷ ⊕ ROTR¹⁸ ⊕ SHR³
+                  1. LOWER SIGMA 0: σ₀(W[i-15]) = {is64Bit ? 'ROTR¹ ⊕ ROTR⁸ ⊕ SHR⁷' : 'ROTR⁷ ⊕ ROTR¹⁸ ⊕ SHR³'}
                 </div>
                 <BitwiseOperationRow
                   label={`W[${sigma0Expansion.input?.index ?? 'i-15'}]`}
@@ -752,27 +817,55 @@ export default function RoundComputationView({ step }: Props) {
                   hex={sigma0Expansion.input.hex}
                   opType="input"
                 />
-                <BitwiseOperationRow
-                  label="ROTR⁷"
-                  binary={sigma0Expansion.rot7.binary}
-                  hex={sigma0Expansion.rot7.hex}
-                  opType="rot"
-                  tag="ROTR 7"
-                />
-                <BitwiseOperationRow
-                  label="ROTR¹⁸"
-                  binary={sigma0Expansion.rot18.binary}
-                  hex={sigma0Expansion.rot18.hex}
-                  opType="rot"
-                  tag="ROTR 18"
-                />
-                <BitwiseOperationRow
-                  label="SHR³"
-                  binary={sigma0Expansion.shr3.binary}
-                  hex={sigma0Expansion.shr3.hex}
-                  opType="shr"
-                  tag="SHR 3"
-                />
+                {is64Bit ? (
+                  <>
+                    <BitwiseOperationRow
+                      label="ROTR¹"
+                      binary={sigma0Expansion.rot1.binary}
+                      hex={sigma0Expansion.rot1.hex}
+                      opType="rot"
+                      tag="ROTR 1"
+                    />
+                    <BitwiseOperationRow
+                      label="ROTR⁸"
+                      binary={sigma0Expansion.rot8.binary}
+                      hex={sigma0Expansion.rot8.hex}
+                      opType="rot"
+                      tag="ROTR 8"
+                    />
+                    <BitwiseOperationRow
+                      label="SHR⁷"
+                      binary={sigma0Expansion.shr7.binary}
+                      hex={sigma0Expansion.shr7.hex}
+                      opType="shr"
+                      tag="SHR 7"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <BitwiseOperationRow
+                      label="ROTR⁷"
+                      binary={sigma0Expansion.rot7.binary}
+                      hex={sigma0Expansion.rot7.hex}
+                      opType="rot"
+                      tag="ROTR 7"
+                    />
+                    <BitwiseOperationRow
+                      label="ROTR¹⁸"
+                      binary={sigma0Expansion.rot18.binary}
+                      hex={sigma0Expansion.rot18.hex}
+                      opType="rot"
+                      tag="ROTR 18"
+                    />
+                    <BitwiseOperationRow
+                      label="SHR³"
+                      binary={sigma0Expansion.shr3.binary}
+                      hex={sigma0Expansion.shr3.hex}
+                      opType="shr"
+                      tag="SHR 3"
+                    />
+                  </>
+                )}
                 <BitwiseOperationRow
                   label="σ₀ OUT"
                   binary={sigma0Expansion.result.binary}
@@ -786,7 +879,7 @@ export default function RoundComputationView({ step }: Props) {
               {/* Lower Sigma 1 */}
               <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
                 <div className="text-[9px] font-medium uppercase tracking-wider text-[#fb923c]">
-                  2. LOWER SIGMA 1: σ₁(W[i-2]) = ROTR¹⁷ ⊕ ROTR¹⁹ ⊕ SHR¹⁰
+                  2. LOWER SIGMA 1: σ₁(W[i-2]) = {is64Bit ? 'ROTR¹⁹ ⊕ ROTR⁶¹ ⊕ SHR⁶' : 'ROTR¹⁷ ⊕ ROTR¹⁹ ⊕ SHR¹⁰'}
                 </div>
                 <BitwiseOperationRow
                   label={`W[${sigma1Expansion.input?.index ?? 'i-2'}]`}
@@ -794,27 +887,55 @@ export default function RoundComputationView({ step }: Props) {
                   hex={sigma1Expansion.input.hex}
                   opType="input"
                 />
-                <BitwiseOperationRow
-                  label="ROTR¹⁷"
-                  binary={sigma1Expansion.rot17.binary}
-                  hex={sigma1Expansion.rot17.hex}
-                  opType="rot"
-                  tag="ROTR 17"
-                />
-                <BitwiseOperationRow
-                  label="ROTR¹⁹"
-                  binary={sigma1Expansion.rot19.binary}
-                  hex={sigma1Expansion.rot19.hex}
-                  opType="rot"
-                  tag="ROTR 19"
-                />
-                <BitwiseOperationRow
-                  label="SHR¹⁰"
-                  binary={sigma1Expansion.shr10.binary}
-                  hex={sigma1Expansion.shr10.hex}
-                  opType="shr"
-                  tag="SHR 10"
-                />
+                {is64Bit ? (
+                  <>
+                    <BitwiseOperationRow
+                      label="ROTR¹⁹"
+                      binary={sigma1Expansion.rot19.binary}
+                      hex={sigma1Expansion.rot19.hex}
+                      opType="rot"
+                      tag="ROTR 19"
+                    />
+                    <BitwiseOperationRow
+                      label="ROTR⁶¹"
+                      binary={sigma1Expansion.rot61.binary}
+                      hex={sigma1Expansion.rot61.hex}
+                      opType="rot"
+                      tag="ROTR 61"
+                    />
+                    <BitwiseOperationRow
+                      label="SHR⁶"
+                      binary={sigma1Expansion.shr6.binary}
+                      hex={sigma1Expansion.shr6.hex}
+                      opType="shr"
+                      tag="SHR 6"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <BitwiseOperationRow
+                      label="ROTR¹⁷"
+                      binary={sigma1Expansion.rot17.binary}
+                      hex={sigma1Expansion.rot17.hex}
+                      opType="rot"
+                      tag="ROTR 17"
+                    />
+                    <BitwiseOperationRow
+                      label="ROTR¹⁹"
+                      binary={sigma1Expansion.rot19.binary}
+                      hex={sigma1Expansion.rot19.hex}
+                      opType="rot"
+                      tag="ROTR 19"
+                    />
+                    <BitwiseOperationRow
+                      label="SHR¹⁰"
+                      binary={sigma1Expansion.shr10.binary}
+                      hex={sigma1Expansion.shr10.hex}
+                      opType="shr"
+                      tag="SHR 10"
+                    />
+                  </>
+                )}
                 <BitwiseOperationRow
                   label="σ₁ OUT"
                   binary={sigma1Expansion.result.binary}
@@ -912,7 +1033,7 @@ export default function RoundComputationView({ step }: Props) {
               </span>
             </div>
             <span className="text-[8px] text-[#475569] tabular-nums font-medium">
-              {constants.length || 0} ENTRIES
+              {constants.length || 0} ENTRIES ({constants.length * wordBits} BITS)
             </span>
           </div>
 
@@ -920,7 +1041,7 @@ export default function RoundComputationView({ step }: Props) {
             <div className="overflow-y-auto space-y-0.5 pr-0.5 flex-1 font-mono text-[11px]">
               {constants.map((item) => {
                 const isActive = item.active || (roundIdx !== undefined && item.index === roundIdx && !md5Step && !sha1Step);
-                const offset = (item.index * 4).toString(16).padStart(2, '0').toUpperCase();
+                const offset = (item.index * wordBytes).toString(16).padStart(3, '0').toUpperCase();
                 return (
                   <div
                     key={item.index}

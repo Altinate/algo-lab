@@ -78,6 +78,11 @@ export function uint64ToHex(n: bigint): string {
   return (n & 0xFFFFFFFFFFFFFFFFn).toString(16).padStart(16, '0');
 }
 
+/** Convert a 64-bit BigInt to a 64-bit binary string */
+export function uint64ToBinary(n: bigint): string {
+  return (n & 0xFFFFFFFFFFFFFFFFn).toString(2).padStart(64, '0');
+}
+
 /** Right-rotate a 64-bit BigInt by r positions */
 export function rightRotate64(value: bigint, r: number): bigint {
   const mask = 0xFFFFFFFFFFFFFFFFn;

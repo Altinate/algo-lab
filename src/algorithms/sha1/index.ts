@@ -22,17 +22,22 @@ export class SHA1Plugin implements AlgorithmPlugin {
   compute(input: string) {
     const steps: ComputationStep[] = [];
     
+    const bytes = stringToBytes(input);
+    const bitLength = bytes.length * 8;
+    
     steps.push({
       id: 'input-encoding',
       title: 'Input Encoding',
       phase: 'Preprocessing',
-      description: 'Convert string to UTF-8 bytes',
-      data: { input },
-      visualizationType: 'generic'
+      description: 'Convert string to UTF-8 bytes.',
+      data: {
+        input: input || '(empty string)',
+        bytes: Array.from(bytes),
+        hex: bytesToHex(bytes),
+        bitLength,
+      },
+      visualizationType: 'binary-transform'
     });
-
-    const bytes = stringToBytes(input);
-    const bitLength = bytes.length * 8;
     
     // Padding
     const paddingLength = (56 - ((bytes.length + 1) % 64) + 64) % 64;
@@ -54,7 +59,14 @@ export class SHA1Plugin implements AlgorithmPlugin {
       title: 'Message Padding',
       phase: 'Preprocessing',
       description: 'Pad message to multiple of 512 bits with a 1 bit, zeros, and big-endian length.',
-      data: { originalBytes: Array.from(bytes), paddedBytes: Array.from(buffer) },
+      data: {
+        originalBits: bitLength,
+        paddingByte: '10000000 (0x80)',
+        zeroPaddingBytes: paddingLength,
+        paddedHex: bytesToHex(buffer),
+        totalBits: totalLength * 8,
+        totalBlocks: totalLength / 64,
+      },
       visualizationType: 'binary-transform'
     });
 

@@ -82,7 +82,6 @@ export function sha256Engine(
       binary: formatBinaryGroups(inputBinary),
       hex: bytesToHex(inputBytes),
       bitLength: inputBinary.length,
-      constants: fullConstants,
     },
     visualizationType: 'binary-transform',
   });
@@ -120,7 +119,6 @@ export function sha256Engine(
       paddedHex: bytesToHex(paddedBytes),
       totalBits: totalLen * 8,
       totalBlocks: totalLen / 64,
-      constants: fullConstants,
     },
     visualizationType: 'binary-transform',
   });
@@ -149,7 +147,6 @@ export function sha256Engine(
           hex: uint32ToHex(w),
           binary: uint32ToBinary(w),
         })),
-        constants: fullConstants,
       },
       visualizationType: 'binary-transform',
     });
@@ -169,7 +166,6 @@ export function sha256Engine(
         hex: uint32ToHex(h),
         binary: uint32ToBinary(h),
       })),
-      constants: fullConstants,
     },
     visualizationType: 'generic',
   });
@@ -426,7 +422,6 @@ export function sha256Engine(
       })),
       digest,
       digestFormatted: formatHexGroups(digest),
-      constants: fullConstants,
     },
     visualizationType: 'final-digest',
   });

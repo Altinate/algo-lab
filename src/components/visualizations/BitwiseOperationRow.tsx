@@ -10,26 +10,63 @@ interface Props {
   isResult?: boolean;
 }
 
-const opColors = {
-  input: 'text-cyan-300 border-cyan-500/30 bg-cyan-950/30',
-  rot: 'text-orange-300 border-orange-500/30 bg-orange-950/30',
-  shr: 'text-rose-300 border-rose-500/30 bg-rose-950/30',
-  xor: 'text-emerald-300 border-emerald-500/30 bg-emerald-950/30',
-  and: 'text-blue-300 border-blue-500/30 bg-blue-950/30',
-  not: 'text-purple-300 border-purple-500/30 bg-purple-950/30',
-  add: 'text-amber-300 border-amber-500/30 bg-amber-950/30',
-  result: 'text-yellow-300 border-yellow-500/40 bg-yellow-950/40 font-semibold',
-};
-
-const tagBadges = {
-  input: 'bg-cyan-500/20 text-cyan-400',
-  rot: 'bg-orange-500/20 text-orange-400',
-  shr: 'bg-rose-500/20 text-rose-400',
-  xor: 'bg-emerald-500/20 text-emerald-400',
-  and: 'bg-blue-500/20 text-blue-400',
-  not: 'bg-purple-500/20 text-purple-400',
-  add: 'bg-amber-500/20 text-amber-400',
-  result: 'bg-yellow-500/20 text-yellow-300',
+const opStyles = {
+  input: {
+    bg: 'bg-[#10141c]',
+    border: 'border-[#1f2937]',
+    tag: 'bg-[#1e293b] text-[#38bdf8] border-[#38bdf8]/30',
+    hex: 'text-[#38bdf8]',
+    bin: 'text-[#cbd5e1]',
+  },
+  rot: {
+    bg: 'bg-[#121118]',
+    border: 'border-[#fb923c]/30',
+    tag: 'bg-[#fb923c]/15 text-[#fb923c] border-[#fb923c]/40',
+    hex: 'text-[#fb923c]',
+    bin: 'text-[#cbd5e1]',
+  },
+  shr: {
+    bg: 'bg-[#160f14]',
+    border: 'border-[#f43f5e]/30',
+    tag: 'bg-[#f43f5e]/15 text-[#f43f5e] border-[#f43f5e]/40',
+    hex: 'text-[#f43f5e]',
+    bin: 'text-[#cbd5e1]',
+  },
+  xor: {
+    bg: 'bg-[#0f1715]',
+    border: 'border-[#34d399]/30',
+    tag: 'bg-[#34d399]/15 text-[#34d399] border-[#34d399]/40',
+    hex: 'text-[#34d399]',
+    bin: 'text-[#34d399]',
+  },
+  and: {
+    bg: 'bg-[#0f1520]',
+    border: 'border-[#38bdf8]/30',
+    tag: 'bg-[#38bdf8]/15 text-[#38bdf8] border-[#38bdf8]/40',
+    hex: 'text-[#38bdf8]',
+    bin: 'text-[#cbd5e1]',
+  },
+  not: {
+    bg: 'bg-[#15111e]',
+    border: 'border-[#c084fc]/30',
+    tag: 'bg-[#c084fc]/15 text-[#c084fc] border-[#c084fc]/40',
+    hex: 'text-[#c084fc]',
+    bin: 'text-[#cbd5e1]',
+  },
+  add: {
+    bg: 'bg-[#14120e]',
+    border: 'border-[#e5a93b]/25',
+    tag: 'bg-[#e5a93b]/15 text-[#e5a93b] border-[#e5a93b]/40',
+    hex: 'text-[#e5a93b]',
+    bin: 'text-[#cbd5e1]',
+  },
+  result: {
+    bg: 'bg-[#17140e]',
+    border: 'border-[#e5a93b]/60',
+    tag: 'bg-[#e5a93b]/25 text-[#e5a93b] border-[#e5a93b] phosphor-amber',
+    hex: 'text-[#e5a93b] font-bold phosphor-amber',
+    bin: 'text-[#f8fafc] font-semibold',
+  },
 };
 
 export default function BitwiseOperationRow({
@@ -42,20 +79,21 @@ export default function BitwiseOperationRow({
 }: Props) {
   const cleanBinary = binary.replace(/\s+/g, '');
   const formattedBinary = formatBinaryGroups(cleanBinary, 8);
+  const st = opStyles[opType] || opStyles.input;
 
   return (
     <div
-      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-3 rounded px-2.5 py-1.5 font-mono text-xs border ${
-        opColors[opType]
-      } ${isResult ? 'border-b-2 shadow-sm' : ''}`}
+      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-3 rounded-[2px] px-2 py-1 font-mono text-[11px] border ${
+        st.bg
+      } ${st.border} ${isResult ? 'border-b-2' : ''}`}
     >
       <div className="flex items-center gap-2 shrink-0">
-        <span className="font-medium text-gray-400 min-w-[70px]">{label}</span>
+        <span className="text-[10px] text-[#64748b] uppercase tracking-wider min-w-[72px]">
+          {label}
+        </span>
         {tag && (
           <span
-            className={`rounded px-1.5 py-0.2 text-[10px] uppercase font-bold tracking-wider ${
-              tagBadges[opType]
-            }`}
+            className={`rounded-[2px] px-1 py-0.2 text-[9px] font-mono font-bold tracking-tight border ${st.tag}`}
           >
             {tag}
           </span>
@@ -63,11 +101,11 @@ export default function BitwiseOperationRow({
       </div>
 
       <div className="flex items-center gap-3 overflow-x-auto">
-        <span className="tracking-widest text-[11px] font-mono select-all">
+        <span className={`tracking-widest tabular-nums select-all ${st.bin}`}>
           {formattedBinary}
         </span>
         {hex && (
-          <span className="text-[11px] text-gray-400 shrink-0 font-bold">
+          <span className={`tabular-nums shrink-0 font-bold ${st.hex}`}>
             0x{hex}
           </span>
         )}

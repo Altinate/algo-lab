@@ -1,3 +1,4 @@
+import React from 'react';
 import type { ComputationStep } from '../../algorithms/types';
 
 interface Props {
@@ -12,44 +13,51 @@ export default function FinalDigestView({ step }: Props) {
   const digestFormatted = data.digestFormatted as string | undefined;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 font-mono">
       {/* Hash values that compose the digest */}
       {hashValues && (
-        <div>
-          <h4 className="mb-2 text-xs uppercase tracking-wider text-gray-500">
-            Hash Values
-          </h4>
-          <div className="flex flex-wrap gap-1">
+        <div className="rounded-[2px] bg-[#0c1017] p-3 border border-[#1f2937]">
+          <div className="flex items-center justify-between pb-1.5 border-b border-[#1f2937] mb-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#38bdf8]">
+              STATE ACCUMULATOR REGISTERS
+            </span>
+            <span className="text-[9px] text-[#64748b] tabular-nums">
+              {hashValues.length} WORDS ({hashValues.length * 32} BITS)
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 tabular-nums">
             {hashValues.map((h, i) => (
               <div
                 key={i}
-                className="rounded-md border border-green-500/20 bg-green-500/5 px-2 py-1 font-mono text-xs"
+                className="rounded-[2px] border border-[#1f2937] bg-[#0e131b] px-2 py-1 text-xs"
               >
-                <span className="text-gray-500">{h.label}=</span>
-                <span className="text-green-400">{h.hex}</span>
+                <span className="text-[9px] text-[#64748b] block">{h.label}</span>
+                <span className="text-[#38bdf8] font-bold">0x{h.hex}</span>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Concatenation arrow */}
-      <div className="flex items-center gap-2 text-gray-500">
-        <div className="h-px flex-1 bg-gray-700" />
-        <span className="text-xs">concatenate</span>
-        <div className="h-px flex-1 bg-gray-700" />
+      {/* Pipeline Bus Concatenation indicator */}
+      <div className="flex items-center gap-2 text-[#64748b] text-[10px] uppercase font-bold">
+        <div className="h-px flex-1 bg-[#1f2937]" />
+        <span>CONCATENATE REGISTERS TO FINAL BUS DIGEST</span>
+        <div className="h-px flex-1 bg-[#1f2937]" />
       </div>
 
-      {/* Final digest */}
-      <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-4">
-        <h4 className="mb-1 text-xs uppercase tracking-wider text-green-400/70">
-          Final Digest
-        </h4>
-        <p className="break-all font-mono text-lg leading-relaxed text-green-300">
+      {/* Final digest banner */}
+      <div className="rounded-[2px] border border-[#34d399]/40 bg-[#0c1813] p-4 text-[#34d399] tabular-nums">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#34d399]">
+            FINAL CRYPTOGRAPHIC DIGEST
+          </span>
+          <span className="text-[9px] text-[#64748b] uppercase">
+            {digest.length * 4} BITS ({digest.length / 2} BYTES)
+          </span>
+        </div>
+        <p className="break-all font-mono text-base sm:text-lg leading-relaxed text-[#34d399] font-bold tracking-wider phosphor-green select-all">
           {digestFormatted || digest}
-        </p>
-        <p className="mt-2 text-xs text-gray-500">
-          {digest.length * 4} bits ({digest.length / 2} bytes)
         </p>
       </div>
     </div>

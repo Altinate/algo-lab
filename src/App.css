@@ -1,1 +1,46 @@
 @import 'tailwindcss';
+
+@theme {
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Force Tabular Numerics across all monospace elements */
+.font-mono, code, pre, input, textarea {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum' 1, 'zero' 1;
+  font-variant-numeric: tabular-nums;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #090c10;
+  color: #f8fafc;
+}
+
+/* Custom crisp technical scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #090c10;
+}
+::-webkit-scrollbar-thumb {
+  background: #1f2937;
+  border-radius: 0px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
+
+/* Controlled text shadow for active phosphor highlights (max 3px radius) */
+.phosphor-amber {
+  text-shadow: 0 0 3px rgba(229, 169, 59, 0.45);
+}
+.phosphor-cyan {
+  text-shadow: 0 0 3px rgba(56, 189, 248, 0.45);
+}
+.phosphor-green {
+  text-shadow: 0 0 3px rgba(52, 211, 153, 0.45);
+}

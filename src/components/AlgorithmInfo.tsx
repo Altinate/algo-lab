@@ -5,90 +5,90 @@ interface AlgorithmInfoProps {
   info: AlgorithmInfo;
 }
 
-const securityBadge: Record<string, { className: string; label: string }> = {
+const securityStyles: Record<string, { badge: string; symbol: string; label: string }> = {
   secure: {
-    className: 'bg-green-500/20 text-green-400 border-green-500/30',
-    label: '✓ Cryptographically Secure',
+    badge: 'bg-[#0f1f17] text-[#34d399] border-[#34d399]/40',
+    symbol: '■',
+    label: 'CRYPTOGRAPHICALLY SECURE',
   },
   weakened: {
-    className: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-    label: '⚠ Weakened',
+    badge: 'bg-[#1e170c] text-[#e5a93b] border-[#e5a93b]/40',
+    symbol: '▲',
+    label: 'COLLISION RISKS DETECTED',
   },
   broken: {
-    className: 'bg-red-500/20 text-red-400 border-red-500/30',
-    label: '✗ Cryptographically Broken',
+    badge: 'bg-[#201014] text-[#f43f5e] border-[#f43f5e]/40',
+    symbol: '✖',
+    label: 'CRYPTOGRAPHICALLY BROKEN',
   },
   'non-cryptographic': {
-    className: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-    label: '○ Non-Cryptographic',
+    badge: 'bg-[#151c28] text-[#94a3b8] border-[#94a3b8]/40',
+    symbol: '○',
+    label: 'NON-CRYPTOGRAPHIC CHECKSUM',
   },
 };
 
 export default function AlgorithmInfoPanel({ info }: AlgorithmInfoProps) {
-  const [expanded, setExpanded] = useState(false);
-  const badge = securityBadge[info.security];
+  const [expanded, setExpanded] = useState(true);
+  const sec = securityStyles[info.security] || securityStyles['non-cryptographic'];
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5 font-mono">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between text-sm font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-300"
+        className="flex w-full items-center justify-between px-1 py-1 text-[10px] font-bold uppercase tracking-wider text-[#64748b] hover:text-[#94a3b8]"
       >
-        <span>About {info.name}</span>
-        <svg
-          className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+        <span className="flex items-center gap-1.5">
+          <span className="h-1 w-1 bg-[#38bdf8]" />
+          <span>SPECS: {info.name}</span>
+        </span>
+        <span className="text-[10px]">{expanded ? '▼' : '▶'}</span>
       </button>
 
       {expanded && (
-        <div className="space-y-3 rounded-lg border border-gray-700 bg-gray-800/30 p-4 text-sm">
-          <p className="text-gray-300 leading-relaxed">{info.description}</p>
+        <div className="space-y-2 rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5 text-xs">
+          <p className="text-[#94a3b8] text-[11px] leading-relaxed font-sans">{info.description}</p>
 
           <div
-            className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${badge.className}`}
+            className={`inline-flex items-center gap-1.5 rounded-[2px] border px-2 py-0.5 text-[9px] font-bold ${sec.badge}`}
           >
-            {badge.label}
+            <span>{sec.symbol}</span>
+            <span>{sec.label}</span>
           </div>
 
           {info.securityNote && (
-            <p className="rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-300 border border-red-500/20">
-              ⚠ {info.securityNote}
+            <p className="rounded-[2px] bg-[#201014] px-2 py-1 text-[10px] text-[#f43f5e] border border-[#f43f5e]/30">
+              ✖ {info.securityNote}
             </p>
           )}
 
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            <div>
-              <span className="text-gray-500">Digest size</span>
-              <p className="font-mono text-gray-300">{info.digestSize} bits</p>
+          <div className="grid grid-cols-2 gap-1.5 text-[10px] tabular-nums pt-1 border-t border-[#1f2937]">
+            <div className="rounded-[2px] bg-[#0e131b] p-1.5 border border-[#1f2937]">
+              <span className="text-[#64748b] block text-[8px] uppercase">Digest Size</span>
+              <span className="text-[#38bdf8] font-bold">{info.digestSize} BITS</span>
             </div>
-            <div>
-              <span className="text-gray-500">Block size</span>
-              <p className="font-mono text-gray-300">{info.blockSize} bits</p>
+            <div className="rounded-[2px] bg-[#0e131b] p-1.5 border border-[#1f2937]">
+              <span className="text-[#64748b] block text-[8px] uppercase">Block Size</span>
+              <span className="text-[#cbd5e1] font-bold">{info.blockSize} BITS</span>
             </div>
-            <div>
-              <span className="text-gray-500">Year</span>
-              <p className="text-gray-300">{info.year}</p>
+            <div className="rounded-[2px] bg-[#0e131b] p-1.5 border border-[#1f2937]">
+              <span className="text-[#64748b] block text-[8px] uppercase">Standardized</span>
+              <span className="text-[#cbd5e1] font-bold">{info.year}</span>
             </div>
-            <div>
-              <span className="text-gray-500">Designer(s)</span>
-              <p className="text-gray-300">{info.designers.join(', ')}</p>
+            <div className="rounded-[2px] bg-[#0e131b] p-1.5 border border-[#1f2937]">
+              <span className="text-[#64748b] block text-[8px] uppercase">Designer</span>
+              <span className="text-[#cbd5e1] font-bold truncate block">{info.designers.join(', ')}</span>
             </div>
           </div>
 
           {info.useCases.length > 0 && (
-            <div>
-              <span className="text-xs text-gray-500">Common use cases</span>
-              <div className="mt-1 flex flex-wrap gap-1">
+            <div className="pt-1">
+              <span className="text-[8px] text-[#64748b] uppercase block mb-1">Standard Applications:</span>
+              <div className="flex flex-wrap gap-1">
                 {info.useCases.map((uc) => (
                   <span
                     key={uc}
-                    className="rounded-full bg-gray-700/50 px-2 py-0.5 text-xs text-gray-400"
+                    className="rounded-[2px] bg-[#121824] px-1.5 py-0.2 text-[9px] text-[#94a3b8] border border-[#1f2937]"
                   >
                     {uc}
                   </span>

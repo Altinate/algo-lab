@@ -23,7 +23,6 @@ export default function HashOutput({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback for non-HTTPS contexts
       const ta = document.createElement('textarea');
       ta.value = digest;
       document.body.appendChild(ta);
@@ -36,29 +35,32 @@ export default function HashOutput({
   };
 
   return (
-    <div className="flex flex-col space-y-1.5">
+    <div className="flex flex-col space-y-1 font-mono">
       <div className="flex shrink-0 items-center justify-between">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400">
-          {algorithmName} Hash Output
-        </h2>
-        <span className="text-[11px] text-gray-500 font-mono">{digestSize} bits</span>
+        <div className="flex items-center gap-1.5">
+          <span className={`h-1 w-1 ${isComplete ? 'bg-[#34d399]' : 'bg-[#e5a93b]'}`} />
+          <h2 className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">
+            DIGEST OUT: {algorithmName}
+          </h2>
+        </div>
+        <span className="text-[10px] text-[#64748b] tabular-nums">{digestSize} BITS</span>
       </div>
       <div
-        className={`group relative h-11 flex items-center justify-between rounded-lg border px-3.5 font-mono text-xs sm:text-sm transition-all ${
+        className={`group relative h-10 flex items-center justify-between rounded-[2px] border px-3 font-mono text-xs transition-all tabular-nums ${
           isComplete
-            ? 'border-green-500/40 bg-green-500/10 text-green-300'
-            : 'border-gray-700 bg-gray-800/80 text-gray-400'
+            ? 'border-[#34d399]/40 bg-[#0c1813] text-[#34d399] phosphor-green'
+            : 'border-[#1f2937] bg-[#0c1017] text-[#64748b]'
         }`}
       >
-        <div className="truncate font-mono select-all pr-14">
-          {digest ? formatHexGroups(digest) : 'Waiting for computation...'}
+        <div className="truncate font-mono select-all pr-14 tracking-wider">
+          {digest ? formatHexGroups(digest) : 'WAITING FOR COMPUTATION CYCLE...'}
         </div>
         {digest && (
           <button
             onClick={handleCopy}
-            className="absolute right-2 top-2 bottom-2 my-auto flex items-center rounded bg-gray-700/90 px-2.5 text-xs text-gray-200 opacity-90 transition-all hover:opacity-100 hover:bg-gray-600 border border-gray-600 shadow-sm"
+            className="absolute right-1 top-1 bottom-1 my-auto flex items-center rounded-[2px] bg-[#1a2232] px-2 text-[10px] text-[#cbd5e1] hover:bg-[#253247] hover:text-white border border-[#1f2937] transition-all"
           >
-            {copied ? '✓ Copied' : 'Copy'}
+            {copied ? '✓ COPIED' : 'COPY'}
           </button>
         )}
       </div>

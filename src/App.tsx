@@ -54,67 +54,52 @@ export default function App() {
   const phases = getPhases(engine.steps);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col antialiased selection:bg-blue-500/30 selection:text-blue-200">
-      {/* ─── Compact Top Header Bar ──────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 flex h-12 shrink-0 items-center justify-between border-b border-gray-800/80 bg-gray-900/95 px-3 sm:px-4 backdrop-blur">
-        {/* Left: Sidebar Toggle + Brand / Title */}
+    <div className="min-h-screen bg-[#090c10] text-[#f8fafc] flex flex-col font-mono antialiased">
+      {/* ─── Top Telemetry Header Bar ────────────────────────────────────── */}
+      <header className="sticky top-0 z-30 flex h-10 shrink-0 items-center justify-between border-b border-[#1f2937] bg-[#0c1017] px-3 sm:px-4">
+        {/* Left: Sidebar Toggle + Instrument Title */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Sidebar Toggle Button */}
           <button
             onClick={toggleSidebar}
-            className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-all ${
+            className={`flex h-6 w-6 items-center justify-center rounded-[2px] border transition-all text-xs ${
               sidebarOpen
-                ? 'border-gray-700 bg-gray-800 text-blue-400 hover:bg-gray-700'
-                : 'border-blue-500/50 bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 ring-1 ring-blue-500/30'
+                ? 'border-[#1f2937] bg-[#121620] text-[#38bdf8] hover:bg-[#1a2232]'
+                : 'border-[#38bdf8]/50 bg-[#0f1d2e] text-[#38bdf8] hover:bg-[#152238] ring-1 ring-[#38bdf8]/40'
             }`}
-            title={`${sidebarOpen ? 'Hide' : 'Show'} Sidebar (Ctrl+B)`}
+            title={`${sidebarOpen ? 'Collapse' : 'Expand'} Sidebar (Ctrl+B)`}
           >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              {sidebarOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
+            <span>{sidebarOpen ? '«' : '»'}</span>
           </button>
 
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400 font-bold text-sm shadow-sm">
-            #
-          </div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-sm font-bold tracking-tight text-white hidden xs:inline-block">
-              Hash Visualizer
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 bg-[#38bdf8]" />
+            <h1 className="text-xs font-bold tracking-tight text-white uppercase">
+              CRYPTOGRAPHIC LOGIC ANALYZER
             </h1>
-            <span className="hidden md:inline-block rounded-full bg-gray-800 px-2 py-0.5 text-[10px] font-medium text-gray-400 border border-gray-700">
-              Interactive State Inspection
+            <span className="hidden sm:inline-block text-[9px] text-[#64748b] border-l border-[#1f2937] pl-2 uppercase">
+              STATE DISASSEMBLER & ALU INSPECTOR
             </span>
           </div>
         </div>
 
-        {/* Center/Right: Active Algorithm Badge & Quick Status */}
+        {/* Right: Active Target & Cycle Counter */}
         <div className="flex items-center gap-2 sm:gap-3">
           {engine.algorithm && (
-            <div className="flex items-center gap-1.5 sm:gap-2 rounded-md bg-gray-800/80 px-2 sm:px-2.5 py-1 border border-gray-700/80 text-xs">
-              <span className="text-gray-400 hidden sm:inline">Active:</span>
-              <span className="font-bold text-blue-400 font-mono">
+            <div className="flex items-center gap-1.5 rounded-[2px] bg-[#0e131b] px-2 py-0.5 border border-[#1f2937] text-[11px] tabular-nums">
+              <span className="text-[#64748b] hidden sm:inline text-[9px]">TARGET:</span>
+              <span className="font-bold text-[#38bdf8]">
                 {engine.algorithm.info.name}
               </span>
-              <span className="text-[10px] text-gray-500">
-                ({engine.algorithm.info.digestSize}b)
+              <span className="text-[9px] text-[#64748b]">
+                [{engine.algorithm.info.digestSize}b]
               </span>
             </div>
           )}
 
-          <div className="hidden lg:flex items-center gap-1.5 text-xs text-gray-400 bg-gray-800/40 px-2 py-1 rounded border border-gray-800 font-mono">
-            <span className="text-gray-500">Steps:</span>
-            <span className="font-bold text-yellow-400">
-              {engine.steps.length > 0 ? `${playback.currentStep + 1}/${engine.steps.length}` : '0'}
+          <div className="hidden md:flex items-center gap-1 text-[11px] text-[#64748b] bg-[#0e131b] px-2 py-0.5 rounded-[2px] border border-[#1f2937] tabular-nums">
+            <span className="text-[9px]">CYCLE:</span>
+            <span className="font-bold text-[#e5a93b] phosphor-amber">
+              {engine.steps.length > 0 ? `${(playback.currentStep + 1).toString().padStart(2, '0')}/${engine.steps.length.toString().padStart(2, '0')}` : '00/00'}
             </span>
           </div>
 
@@ -122,10 +107,10 @@ export default function App() {
             href="https://github.com/dmarman/sha256algorithm"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-md border border-gray-700 bg-gray-800 px-2.5 py-1 text-xs text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+            className="flex items-center gap-1 rounded-[2px] border border-[#1f2937] bg-[#121620] px-2 py-0.5 text-[10px] text-[#94a3b8] hover:bg-[#1a2232] hover:text-white transition-colors"
           >
-            <span className="text-[10px] hidden sm:inline">Reference</span>
-            <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <span>REF</span>
+            <svg className="w-2.5 h-2.5 text-[#64748b]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
           </a>
@@ -136,26 +121,24 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden relative">
         {/* ─── Left Sidebar: Collapsible with smooth transition ───────── */}
         <aside
-          className={`shrink-0 bg-gray-900/70 flex flex-col h-[calc(100vh-3rem)] sticky top-12 overflow-y-auto transition-all duration-300 ease-in-out z-20 ${
+          className={`shrink-0 bg-[#0a0d14] flex flex-col h-[calc(100vh-2.5rem)] sticky top-10 overflow-y-auto transition-all duration-300 ease-in-out z-20 ${
             sidebarOpen
-              ? 'w-64 xl:w-72 p-4 border-r border-gray-800 opacity-100 pointer-events-auto'
+              ? 'w-64 xl:w-72 p-3 border-r border-[#1f2937] opacity-100 pointer-events-auto'
               : 'w-0 p-0 border-r-0 opacity-0 pointer-events-none overflow-hidden'
           }`}
         >
           {sidebarOpen && (
-            <div className="space-y-5 min-w-[230px]">
-              <div className="flex items-center justify-between pb-2 border-b border-gray-800/80">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
-                  Navigation
+            <div className="space-y-4 min-w-[220px]">
+              <div className="flex items-center justify-between pb-1 border-b border-[#1f2937]">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[#64748b]">
+                  INSTRUMENT NAVIGATOR
                 </span>
                 <button
                   onClick={toggleSidebar}
-                  className="rounded p-1 text-gray-500 hover:bg-gray-800 hover:text-gray-300 transition-colors"
+                  className="rounded-[2px] p-0.5 text-[#64748b] hover:bg-[#121620] hover:text-[#f8fafc] text-xs"
                   title="Collapse sidebar (Ctrl+B)"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
+                  «
                 </button>
               </div>
 
@@ -166,7 +149,7 @@ export default function App() {
               />
 
               {engine.algorithm && (
-                <div className="pt-3 border-t border-gray-800">
+                <div className="pt-2 border-t border-[#1f2937]">
                   <AlgorithmInfoPanel info={engine.algorithm.info} />
                 </div>
               )}
@@ -175,24 +158,22 @@ export default function App() {
         </aside>
 
         {/* ─── Main Content: Fluid Width (Takes 100% remaining space) ─── */}
-        <main className="flex-1 min-w-0 p-3 sm:p-5 overflow-y-auto space-y-4 transition-all duration-300">
+        <main className="flex-1 min-w-0 p-3 sm:p-4 overflow-y-auto space-y-3 transition-all duration-300">
           {/* Re-open Sidebar Floating Pill (when sidebar is hidden) */}
           {!sidebarOpen && (
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleSidebar}
-                className="inline-flex items-center gap-1.5 rounded-md border border-blue-500/40 bg-blue-950/40 px-2.5 py-1 text-xs font-medium text-blue-300 hover:bg-blue-900/50 hover:text-white transition-all shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-[2px] border border-[#38bdf8]/40 bg-[#0f1d2e] px-2 py-0.5 text-[10px] font-bold text-[#38bdf8] hover:bg-[#152238] hover:text-white transition-all shadow-none"
               >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-                <span>Show Algorithm Sidebar</span>
+                <span>»</span>
+                <span>EXPAND ALGORITHM REGISTRY</span>
               </button>
             </div>
           )}
 
-          {/* Top Panel: Input String + Live Hash Output */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-4 items-stretch">
+          {/* Upper Deck: Data Stream Input + Live Digest Output */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5 items-stretch">
             <InputPanel input={engine.input} onInputChange={engine.setInput} />
 
             <HashOutput
@@ -203,23 +184,23 @@ export default function App() {
             />
           </div>
 
-          {/* Transport Controls */}
+          {/* Clock & Transport Controls */}
           <PlaybackControls playback={playback} />
 
           {/* Phase Quick Jump Navigation */}
           {phases.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-lg bg-gray-900/80 border border-gray-800 text-xs">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mr-2">
-                Phase Jump:
+            <div className="flex flex-wrap items-center gap-1 p-1.5 rounded-[2px] bg-[#0c1017] border border-[#1f2937] text-xs">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-[#64748b] mr-1.5">
+                JUMP TO PHASE:
               </span>
               {phases.map(({ phase, startIndex }) => (
                 <button
                   key={`${phase}-${startIndex}`}
                   onClick={() => playback.setCurrentStep(startIndex)}
-                  className={`rounded px-2.5 py-1 text-xs font-medium transition-all ${
+                  className={`rounded-[2px] px-2 py-0.5 text-[10px] font-mono font-bold uppercase transition-all ${
                     currentStepData?.phase === phase
-                      ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400'
-                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700/70'
+                      ? 'bg-[#152238] text-[#38bdf8] border border-[#38bdf8]/60 ring-1 ring-[#38bdf8]/30'
+                      : 'bg-[#0e131b] text-[#94a3b8] hover:bg-[#141a24] hover:text-white border border-[#1f2937]'
                   }`}
                 >
                   {phase}
@@ -228,7 +209,7 @@ export default function App() {
             </div>
           )}
 
-          {/* Step Visualizer (Contains the 3-column persistent view expanding fluidly) */}
+          {/* Step Visualizer (Signature 3-Column Logic Analyzer Architecture) */}
           <StepVisualizer
             step={currentStepData}
             currentStep={playback.currentStep}

@@ -7,18 +7,27 @@ interface AlgorithmSelectorProps {
   onSelect: (name: string) => void;
 }
 
-const securityColors: Record<string, string> = {
-  secure: 'bg-green-500/20 text-green-400 border-green-500/30',
-  weakened: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  broken: 'bg-red-500/20 text-red-400 border-red-500/30',
-  'non-cryptographic': 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-};
-
-const securityLabels: Record<string, string> = {
-  secure: '✓ Secure',
-  weakened: '⚠ Weakened',
-  broken: '✗ Broken',
-  'non-cryptographic': '○ Non-crypto',
+const securityStyles: Record<string, { badge: string; symbol: string; label: string }> = {
+  secure: {
+    badge: 'bg-[#0f1f17] text-[#34d399] border-[#34d399]/40',
+    symbol: '■',
+    label: 'SECURE',
+  },
+  weakened: {
+    badge: 'bg-[#1e170c] text-[#e5a93b] border-[#e5a93b]/40',
+    symbol: '▲',
+    label: 'WEAK',
+  },
+  broken: {
+    badge: 'bg-[#201014] text-[#f43f5e] border-[#f43f5e]/40',
+    symbol: '✖',
+    label: 'BROKEN',
+  },
+  'non-cryptographic': {
+    badge: 'bg-[#151c28] text-[#94a3b8] border-[#94a3b8]/40',
+    symbol: '○',
+    label: 'NON-CRYPTO',
+  },
 };
 
 export default function AlgorithmSelector({
@@ -26,7 +35,6 @@ export default function AlgorithmSelector({
   selectedAlgorithm,
   onSelect,
 }: AlgorithmSelectorProps) {
-  // Find which family currently owns the selected algorithm
   const findFamilyForAlgo = (algoName: string) => {
     for (const [family, algos] of algorithmsByFamily.entries()) {
       if (algos.some((a) => a.info.name === algoName)) {
@@ -38,7 +46,6 @@ export default function AlgorithmSelector({
 
   const initialFamily = findFamilyForAlgo(selectedAlgorithm);
 
-  // Expanded state map for families (default: only selected algorithm's family is expanded)
   const [expandedFamilies, setExpandedFamilies] = useState<Record<string, boolean>>(() => {
     const map: Record<string, boolean> = {};
     for (const family of algorithmsByFamily.keys()) {
@@ -47,7 +54,6 @@ export default function AlgorithmSelector({
     return map;
   });
 
-  // Ensure active family is expanded whenever selectedAlgorithm changes
   useEffect(() => {
     const activeFamily = findFamilyForAlgo(selectedAlgorithm);
     if (activeFamily) {
@@ -66,11 +72,11 @@ export default function AlgorithmSelector({
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400">
-          Algorithms ({Array.from(algorithmsByFamily.values()).flat().length})
-        </h2>
+    <div className="space-y-2.5 font-mono">
+      <div className="flex items-center justify-between pb-1 border-b border-[#1f2937]">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748b]">
+          ALGORITHM REGISTRY ({Array.from(algorithmsByFamily.values()).flat().length})
+        </span>
         <button
           onClick={() => {
             const allExpanded = Object.values(expandedFamilies).every(Boolean);
@@ -80,10 +86,10 @@ export default function AlgorithmSelector({
             }
             setExpandedFamilies(next);
           }}
-          className="text-[10px] text-gray-500 hover:text-gray-300 font-mono transition-colors"
+          className="text-[9px] text-[#64748b] hover:text-[#94a3b8] transition-colors"
           title="Expand/Collapse all"
         >
-          {Object.values(expandedFamilies).every(Boolean) ? 'Collapse all' : 'Expand all'}
+          {Object.values(expandedFamilies).every(Boolean) ? 'COLLAPSE ALL' : 'EXPAND ALL'}
         </button>
       </div>
 
@@ -92,7 +98,7 @@ export default function AlgorithmSelector({
         <select
           value={selectedAlgorithm}
           onChange={(e) => onSelect(e.target.value)}
-          className="w-full rounded-lg border border-gray-600 bg-gray-800 px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-[2px] border border-[#1f2937] bg-[#0c1017] px-3 py-1.5 text-xs text-white focus:border-[#38bdf8] focus:outline-none"
         >
           {Array.from(algorithmsByFamily.entries()).map(([family, algos]) => (
             <optgroup key={family} label={family}>
@@ -107,7 +113,7 @@ export default function AlgorithmSelector({
       </div>
 
       {/* Desktop Accordion List */}
-      <div className="hidden lg:block space-y-1.5">
+      <div className="hidden lg:block space-y-1">
         {Array.from(algorithmsByFamily.entries()).map(([family, algos]) => {
           const isExpanded = !!expandedFamilies[family];
           const hasActiveChild = algos.some((a) => a.info.name === selectedAlgorithm);
@@ -115,70 +121,60 @@ export default function AlgorithmSelector({
           return (
             <div
               key={family}
-              className={`rounded-lg border transition-all duration-200 ${
+              className={`rounded-[2px] border transition-all ${
                 hasActiveChild
-                  ? 'border-gray-700/80 bg-gray-800/40'
-                  : 'border-gray-800/60 bg-gray-900/30'
+                  ? 'border-[#38bdf8]/40 bg-[#0e141f]'
+                  : 'border-[#1f2937] bg-[#0c1017]'
               }`}
             >
               {/* Family Accordion Header */}
               <button
                 onClick={() => toggleFamily(family)}
-                className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-200 transition-colors"
+                className="flex w-full items-center justify-between px-2.5 py-1.5 text-left text-[11px] font-bold uppercase tracking-wider text-[#94a3b8] hover:text-white transition-colors"
               >
-                <div className="flex items-center gap-2">
-                  <span className={hasActiveChild ? 'text-blue-400 font-bold' : ''}>
+                <div className="flex items-center gap-1.5">
+                  <span className={hasActiveChild ? 'text-[#38bdf8] font-bold' : ''}>
                     {family}
                   </span>
-                  <span className="rounded-full bg-gray-800 px-1.5 py-0.2 text-[10px] text-gray-500 font-mono">
-                    {algos.length}
+                  <span className="text-[9px] text-[#475569] tabular-nums">
+                    [{algos.length}]
                   </span>
                 </div>
-                <svg
-                  className={`h-3.5 w-3.5 text-gray-500 transition-transform duration-200 ${
-                    isExpanded ? 'rotate-180 text-gray-300' : ''
-                  }`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
+                <span className="text-[10px] text-[#64748b] transition-transform duration-150">
+                  {isExpanded ? '▼' : '▶'}
+                </span>
               </button>
 
-              {/* Family Algorithm Items with smooth collapse */}
+              {/* Family Algorithm Items */}
               {isExpanded && (
-                <div className="px-1.5 pb-1.5 space-y-0.5 border-t border-gray-800/60 pt-1">
+                <div className="px-1 pb-1 space-y-0.5 border-t border-[#1f2937] pt-1">
                   {algos.map((algo) => {
                     const isSelected = selectedAlgorithm === algo.info.name;
+                    const sec = securityStyles[algo.info.security] || securityStyles['non-cryptographic'];
+
                     return (
                       <button
                         key={algo.info.name}
                         onClick={() => onSelect(algo.info.name)}
-                        className={`flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left text-xs transition-all ${
+                        className={`flex w-full items-center justify-between rounded-[2px] px-2 py-1 text-left text-[11px] transition-all tabular-nums ${
                           isSelected
-                            ? 'bg-blue-600 text-white font-semibold shadow-sm ring-1 ring-blue-400'
-                            : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
+                            ? 'bg-[#152238] border border-[#38bdf8]/60 text-white font-bold'
+                            : 'text-[#cbd5e1] hover:bg-[#141a24] hover:text-white border border-transparent'
                         }`}
                       >
-                        <span className="font-medium">{algo.info.name}</span>
                         <div className="flex items-center gap-1.5">
-                          <span
-                            className={`text-[10px] font-mono ${
-                              isSelected ? 'text-blue-200' : 'text-gray-500'
-                            }`}
-                          >
+                          {isSelected && <span className="text-[#38bdf8] text-[9px]">▶</span>}
+                          <span>{algo.info.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] text-[#64748b]">
                             {algo.info.digestSize}b
                           </span>
                           <span
-                            className={`inline-flex items-center rounded px-1.5 py-0.2 text-[9px] font-medium border ${
-                              isSelected
-                                ? 'bg-blue-700/80 border-blue-400 text-white'
-                                : securityColors[algo.info.security]
-                            }`}
+                            className={`inline-flex items-center gap-0.5 rounded-[2px] px-1 py-0.1 text-[8px] font-bold border ${sec.badge}`}
                           >
-                            {securityLabels[algo.info.security]}
+                            <span>{sec.symbol}</span>
+                            <span>{sec.label}</span>
                           </span>
                         </div>
                       </button>

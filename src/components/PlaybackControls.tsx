@@ -23,23 +23,25 @@ export default function PlaybackControls({ playback }: PlaybackControlsProps) {
   const currentStepDisplay = totalSteps > 0 ? currentStep + 1 : 0;
 
   return (
-    <div className="rounded-lg border border-gray-800 bg-gray-900/80 px-3.5 py-2 shadow-sm space-y-2">
-      {/* ─── Compact Inline Progress & Scrubber Bar ─────────────────────── */}
-      <div className="flex items-center gap-3 font-mono text-xs">
-        <div className="flex items-center gap-1.5 shrink-0 text-gray-400">
-          <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-gray-500">
-            Step
+    <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] px-3 py-1.5 space-y-1.5 font-mono">
+      {/* ─── Compact Inline Progress & Scrubber Track ─────────────────────── */}
+      <div className="flex items-center gap-3 text-xs tabular-nums">
+        <div className="flex items-center gap-1.5 shrink-0 text-[#94a3b8]">
+          <span className="text-[9px] font-bold uppercase tracking-wider text-[#64748b]">
+            CYCLE
           </span>
-          <span className="font-bold text-white text-xs">{currentStepDisplay}</span>
-          <span className="text-gray-600">/</span>
-          <span className="text-gray-400">{totalSteps}</span>
+          <span className="font-bold text-[#f8fafc] text-xs">
+            {currentStepDisplay.toString().padStart(2, '0')}
+          </span>
+          <span className="text-[#475569]">/</span>
+          <span className="text-[#64748b]">{totalSteps.toString().padStart(2, '0')}</span>
         </div>
 
         {/* Interactive Scrub Track */}
-        <div className="relative flex-1 group flex items-center h-4">
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-800 group-hover:h-2 transition-all">
+        <div className="relative flex-1 group flex items-center h-3.5">
+          <div className="h-1 w-full overflow-hidden rounded-none bg-[#151c28] group-hover:h-1.5 transition-all">
             <div
-              className="h-full rounded-full bg-blue-500 group-hover:bg-blue-400 transition-all duration-150"
+              className="h-full rounded-none bg-[#38bdf8] transition-all duration-100"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -51,26 +53,26 @@ export default function PlaybackControls({ playback }: PlaybackControlsProps) {
             onChange={(e) => setCurrentStep(Number(e.target.value))}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             disabled={totalSteps === 0}
-            title="Drag to scrub through steps"
+            title="Scrub clock cycles"
           />
         </div>
 
-        <span className="text-xs font-bold text-blue-400 shrink-0 min-w-[38px] text-right font-mono">
+        <span className="text-[11px] font-bold text-[#38bdf8] shrink-0 min-w-[36px] text-right">
           {Math.round(progress)}%
         </span>
       </div>
 
-      {/* ─── Transport Control Buttons ──────────────────────────────────── */}
-      <div className="flex items-center justify-between pt-1 border-t border-gray-800/80">
+      {/* ─── Clock Transport Buttons & Speed Telemetry ────────────────────── */}
+      <div className="flex items-center justify-between pt-1 border-t border-[#1f2937]">
         <div className="flex items-center gap-1">
           {/* Reset */}
           <button
             onClick={reset}
             disabled={totalSteps === 0 || currentStep === 0}
-            className="rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:opacity-25 disabled:cursor-not-allowed"
-            title="Reset to start (Step 1)"
+            className="rounded-[2px] p-1 text-[#94a3b8] hover:bg-[#151c27] hover:text-[#f8fafc] disabled:opacity-20 disabled:cursor-not-allowed transition-colors border border-transparent hover:border-[#1f2937]"
+            title="Reset clock to cycle 0"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             </svg>
           </button>
@@ -79,38 +81,34 @@ export default function PlaybackControls({ playback }: PlaybackControlsProps) {
           <button
             onClick={prev}
             disabled={currentStep === 0 || totalSteps === 0}
-            className="rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:opacity-25 disabled:cursor-not-allowed"
-            title="Previous step (←)"
+            className="rounded-[2px] p-1 text-[#94a3b8] hover:bg-[#151c27] hover:text-[#f8fafc] disabled:opacity-20 disabled:cursor-not-allowed transition-colors border border-transparent hover:border-[#1f2937]"
+            title="Single step back (←)"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
 
-          {/* Play / Pause */}
+          {/* Clock Step / Run */}
           <button
             onClick={togglePlay}
             disabled={totalSteps === 0}
-            className={`flex items-center justify-center rounded-md px-3 py-1 font-sans text-xs font-semibold text-white shadow-sm transition-all disabled:opacity-25 disabled:cursor-not-allowed ${
+            className={`flex items-center justify-center rounded-[2px] px-2.5 py-0.5 text-[11px] font-bold tracking-wider transition-all disabled:opacity-20 disabled:cursor-not-allowed border ${
               isPlaying
-                ? 'bg-amber-600 hover:bg-amber-500 ring-1 ring-amber-400/40'
-                : 'bg-blue-600 hover:bg-blue-500 ring-1 ring-blue-400/40'
+                ? 'bg-[#26180a] border-[#e5a93b]/60 text-[#e5a93b] phosphor-amber'
+                : 'bg-[#0f1d2e] border-[#38bdf8]/60 text-[#38bdf8]'
             }`}
-            title={isPlaying ? 'Pause auto-play (Space)' : 'Start auto-play (Space)'}
+            title={isPlaying ? 'Halt Clock (Space)' : 'Run Clock (Space)'}
           >
             {isPlaying ? (
-              <span className="flex items-center gap-1.5">
-                <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
-                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                </svg>
-                Pause
+              <span className="flex items-center gap-1">
+                <span>■</span>
+                <span>HALT</span>
               </span>
             ) : (
-              <span className="flex items-center gap-1.5">
-                <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-                Play
+              <span className="flex items-center gap-1">
+                <span>▶</span>
+                <span>CLOCK</span>
               </span>
             )}
           </button>
@@ -119,45 +117,45 @@ export default function PlaybackControls({ playback }: PlaybackControlsProps) {
           <button
             onClick={next}
             disabled={currentStep >= totalSteps - 1 || totalSteps === 0}
-            className="rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:opacity-25 disabled:cursor-not-allowed"
-            title="Next step (→)"
+            className="rounded-[2px] p-1 text-[#94a3b8] hover:bg-[#151c27] hover:text-[#f8fafc] disabled:opacity-20 disabled:cursor-not-allowed transition-colors border border-transparent hover:border-[#1f2937]"
+            title="Single step forward (→)"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
 
-          {/* Go to End */}
+          {/* Skip to end */}
           <button
             onClick={goToEnd}
             disabled={totalSteps === 0 || currentStep >= totalSteps - 1}
-            className="rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-800 hover:text-white disabled:opacity-25 disabled:cursor-not-allowed"
-            title="Skip to end"
+            className="rounded-[2px] p-1 text-[#94a3b8] hover:bg-[#151c27] hover:text-[#f8fafc] disabled:opacity-20 disabled:cursor-not-allowed transition-colors border border-transparent hover:border-[#1f2937]"
+            title="Skip to final digest"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
             </svg>
           </button>
         </div>
 
-        {/* Speed Control Selector */}
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-gray-500 font-medium">Speed:</span>
-          <div className="flex items-center rounded border border-gray-700 bg-gray-800/80 p-0.5">
+        {/* Clock Frequency / Speed Control */}
+        <div className="flex items-center gap-1.5 text-[10px]">
+          <span className="text-[#64748b] uppercase">FREQ:</span>
+          <div className="flex items-center rounded-[2px] border border-[#1f2937] bg-[#090c10] p-0.5">
             {[
-              { label: '0.5×', val: 1000 },
-              { label: '1×', val: 500 },
-              { label: '2×', val: 250 },
-              { label: '5×', val: 100 },
-              { label: '10×', val: 50 },
+              { label: '0.5x', val: 1000 },
+              { label: '1x', val: 500 },
+              { label: '2x', val: 250 },
+              { label: '5x', val: 100 },
+              { label: '10x', val: 50 },
             ].map(({ label, val }) => (
               <button
                 key={val}
                 onClick={() => setSpeed(val)}
-                className={`rounded px-1.5 py-0.5 text-[11px] font-mono transition-colors ${
+                className={`rounded-[2px] px-1.5 py-0.2 text-[10px] tabular-nums transition-colors ${
                   speed === val
-                    ? 'bg-blue-600 text-white font-bold'
-                    : 'text-gray-400 hover:text-gray-200'
+                    ? 'bg-[#152238] text-[#38bdf8] font-bold border border-[#38bdf8]/40'
+                    : 'text-[#64748b] hover:text-[#94a3b8]'
                 }`}
               >
                 {label}

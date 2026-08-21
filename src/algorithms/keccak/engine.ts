@@ -1,7 +1,7 @@
 import { stringToBytes, bytesToHex, uint64ToHex } from '../utils';
 import { ComputationStep, ComputationResult } from '../types';
 
-const RC = [
+export const RC = [
   0x0000000000000001n, 0x0000000000008082n, 0x800000000000808an, 0x8000000080008000n,
   0x000000000000808bn, 0x0000000080000001n, 0x8000000080008081n, 0x8000000000008009n,
   0x000000000000008an, 0x0000000000000088n, 0x0000000080008009n, 0x000000008000000an,
@@ -10,7 +10,7 @@ const RC = [
   0x8000000080008081n, 0x8000000000008080n, 0x0000000080000001n, 0x8000000080008008n
 ];
 
-const RHO = [
+export const RHO = [
   [0, 36, 3, 41, 18],
   [1, 44, 10, 45, 2],
   [62, 6, 43, 15, 61],
@@ -54,6 +54,7 @@ export function computeKeccakFamily(input: string, config: KeccakConfig): Comput
   const steps: ComputationStep[] = [];
   const inputBytes = stringToBytes(input);
   const rateInBytes = config.rate / 8;
+  const domainLabel = config.domainSep === 0x01 ? 'Keccak-256 (0x01)' : 'SHA-3 (0x06)';
   
   // Padding
   let padLen = rateInBytes - (inputBytes.length % rateInBytes);
@@ -64,13 +65,15 @@ export function computeKeccakFamily(input: string, config: KeccakConfig): Comput
   
   steps.push({
     id: 'padding',
-    title: 'Message Padding (Sponge)',
+    title: 'Sponge Message Padding (10*1)',
     phase: 'Preprocessing',
-    description: `Append domain separation bits and pad to a multiple of the rate (${config.rate} bits).`,
+    description: `Append domain separation suffix (${domainLabel}) and pad to a multiple of the rate (${config.rate} bits / ${rateInBytes} bytes). Capacity: ${config.capacity} bits.`,
     data: {
       rateBits: config.rate,
       capacityBits: config.capacity,
-      paddedHex: bytesToHex(paddedBytes)
+      paddedHex: bytesToHex(paddedBytes),
+      totalBits: paddedBytes.length * 8,
+      totalBlocks: paddedBytes.length / rateInBytes,
     },
     visualizationType: 'binary-transform'
   });
@@ -82,12 +85,17 @@ export function computeKeccakFamily(input: string, config: KeccakConfig): Comput
     return state.map(row => row.map(lane => uint64ToHex(lane)));
   };
 
+  const cloneState = (state: bigint[][]) => {
+    return state.map(row => [...row]);
+  };
+
   const numBlocks = paddedBytes.length / rateInBytes;
   
   for (let blockIdx = 0; blockIdx < numBlocks; blockIdx++) {
     const offset = blockIdx * rateInBytes;
+    const prevAbsorbState = cloneState(A);
     
-    // Absorb
+    // Absorb: XOR message block lanes into A[x, y]
     for (let x = 0; x < config.rate / 64; x++) {
       const laneX = x % 5;
       const laneY = Math.floor(x / 5);
@@ -96,18 +104,25 @@ export function computeKeccakFamily(input: string, config: KeccakConfig): Comput
     
     steps.push({
       id: `absorb-${blockIdx}`,
-      title: 'Absorb Block',
-      phase: `Block ${blockIdx + 1} / ${numBlocks}`,
-      description: `XOR the message block into the state.`,
+      title: `Sponge Absorb Block ${blockIdx + 1} of ${numBlocks}`,
+      phase: 'Absorbing',
+      description: `XOR ${config.rate / 64} message lanes (${config.rate} bits) into the 1600-bit state matrix A[x,y]. Capacity lanes remain untouched.`,
       data: {
-        stateMatrix: formatState(A)
+        spongePhase: 'Absorbing',
+        rateBits: config.rate,
+        capacityBits: config.capacity,
+        absorbLanes: config.rate / 64,
+        prevStateMatrix: formatState(prevAbsorbState),
+        stateMatrix: formatState(A),
       },
       visualizationType: 'state-matrix'
     });
     
-    // Keccak-f[1600] Permutation
+    // Keccak-f[1600] Permutation (24 rounds)
     for (let round = 0; round < 24; round++) {
-      // Theta
+      const prevRoundState = cloneState(A);
+
+      // 1. Theta (θ) - Column parity XOR
       const C = new Array(5).fill(0n);
       const D = new Array(5).fill(0n);
       for (let x = 0; x < 5; x++) {
@@ -122,7 +137,7 @@ export function computeKeccakFamily(input: string, config: KeccakConfig): Comput
         }
       }
       
-      // Rho and Pi
+      // 2. Rho (ρ) & Pi (π) - Rotate & coordinate permutation
       const B: bigint[][] = Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => 0n));
       for (let x = 0; x < 5; x++) {
         for (let y = 0; y < 5; y++) {
@@ -130,24 +145,30 @@ export function computeKeccakFamily(input: string, config: KeccakConfig): Comput
         }
       }
       
-      // Chi
+      // 3. Chi (χ) - Non-linear row gate
       for (let x = 0; x < 5; x++) {
         for (let y = 0; y < 5; y++) {
           A[x][y] = (B[x][y] ^ ((~B[(x + 1) % 5][y]) & B[(x + 2) % 5][y])) & 0xFFFFFFFFFFFFFFFFn;
         }
       }
       
-      // Iota
+      // 4. Iota (ι) - Round constant XOR on lane A[0,0]
       A[0][0] ^= RC[round];
       
       steps.push({
         id: `keccak-f-block-${blockIdx}-round-${round}`,
-        title: `Keccak-f Round ${round}`,
-        phase: `Block ${blockIdx + 1} / ${numBlocks}`,
-        description: `Apply θ, ρ, π, χ, and ι operations.`,
+        title: `Keccak-f[1600] Round ${round + 1} of 24`,
+        phase: 'Permutation',
+        description: `Round ${round + 1} Permutation:\n• θ (Theta): Column parity diffusion D[x] = C[x-1] ⊕ ROTL(C[x+1], 1)\n• ρ (Rho) & π (Pi): Intra-lane rotation & coordinate permutation\n• χ (Chi): Non-linear row mapping A[x,y] ⊕ (¬B[x+1,y] ∧ B[x+2,y])\n• ι (Iota): Add round constant RC[${round}] = 0x${uint64ToHex(RC[round])} to A[0,0]`,
         data: {
-          round,
-          stateMatrix: formatState(A)
+          roundIndex: round + 1,
+          spongePhase: 'Permutation',
+          subStep: 'θ → ρ → π → χ → ι',
+          roundConstant: '0x' + uint64ToHex(RC[round]),
+          rateBits: config.rate,
+          capacityBits: config.capacity,
+          prevStateMatrix: formatState(prevRoundState),
+          stateMatrix: formatState(A),
         },
         visualizationType: 'state-matrix'
       });
@@ -173,11 +194,15 @@ export function computeKeccakFamily(input: string, config: KeccakConfig): Comput
   
   steps.push({
     id: 'final-digest',
-    title: 'Final Digest',
-    phase: 'Output',
-    description: `Squeeze out the first ${config.outputLen} bits for the final digest.`,
+    title: 'Sponge Squeeze Digest',
+    phase: 'Squeezing',
+    description: `Squeeze out the first ${config.outputLen} bits (${config.outputLen / 8} bytes) from the outer state lanes in little-endian order.`,
     data: {
-      digest: finalDigest
+      spongePhase: 'Squeezing',
+      digest: finalDigest,
+      rateBits: config.rate,
+      capacityBits: config.capacity,
+      stateMatrix: formatState(A),
     },
     visualizationType: 'final-digest'
   });

@@ -1,6 +1,21 @@
 import React from 'react';
 import type { ComputationStep } from '../../algorithms/types';
 
+/**
+ * Canonical Data Contract for 5×5 State Matrix Visualizer (Keccak-f[1600] / SHA-3)
+ */
+export interface StateMatrixData {
+  roundIndex?: number;
+  subStep?: string;
+  roundConstant?: string;
+  rateBits?: number;
+  capacityBits?: number;
+  absorbLanes?: number;
+  spongePhase?: string;
+  stateMatrix?: string[][];
+  prevStateMatrix?: string[][];
+}
+
 interface Props {
   step: ComputationStep;
 }
@@ -19,60 +34,90 @@ function formatLaneValue(rawHex: string) {
 
 /** Visualizes a 5×5 state matrix for Keccak/SHA-3 algorithms */
 export default function StateMatrixView({ step }: Props) {
-  const data = step.data;
-  const stateMatrix = data.stateMatrix as string[][] | undefined;
-  const prevStateMatrix = data.prevStateMatrix as string[][] | undefined;
-  const roundIndex = data.roundIndex as number | undefined;
-  const subStep = data.subStep as string | undefined;
+  const data = step.data as unknown as StateMatrixData;
+  const stateMatrix = data.stateMatrix;
+  const prevStateMatrix = data.prevStateMatrix;
+  const roundIndex = data.roundIndex;
+  const subStep = data.subStep;
+  const roundConstant = data.roundConstant;
+  const spongePhase = data.spongePhase;
+  const rateBits = data.rateBits;
+  const capacityBits = data.capacityBits;
 
   if (!stateMatrix) {
     return (
-      <div className="text-[11px] text-[#64748b] font-mono">
+      <div className="text-[11px] text-[#64748b] font-mono p-4 text-center">
         STATE MATRIX DATA UNAVAILABLE
       </div>
     );
   }
 
   return (
-    <div className="space-y-3 font-mono">
-      {/* Step and Round Indicator Header */}
-      {roundIndex !== undefined && (
-        <div className="flex items-center justify-between pb-1 border-b border-[#1f2937] text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase font-medium text-[#64748b] tabular-nums">
-              KECCAK-F[1600] ROUND 0x{roundIndex.toString(16).padStart(2, '0').toUpperCase()}
+    <div className="space-y-2.5 font-mono text-[#f8fafc]">
+      {/* ─── Hardware Telemetry Toolbar ───────────────────────────────── */}
+      <div className="flex items-center justify-between bg-[#0b0e14] px-2.5 py-1 rounded-[2px] border border-[#1f2937] text-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 bg-[#38bdf8]" />
+            <span className="text-[9px] uppercase tracking-wider text-[#64748b] font-medium">
+              KECCAK-f[1600] 5×5 STATE MATRIX (1600 BITS)
             </span>
-            {subStep && (
-              <span className="rounded-[2px] bg-[#120e18] px-2 py-0.5 text-[9px] font-semibold text-[#c084fc] border border-[#c084fc]/40 uppercase tracking-wider">
-                STEP: {subStep}
-              </span>
-            )}
           </div>
-          <span className="text-[9px] text-[#475569] uppercase tracking-wider">
-            STATE: 1600 BITS (5×5 64-BIT LANES)
-          </span>
+          {roundIndex !== undefined && (
+            <span className="rounded-[2px] bg-[#15120c] border border-[#e5a93b]/40 text-[#e5a93b] px-1.5 py-0.1 text-[9px] font-semibold tabular-nums phosphor-amber">
+              ROUND {roundIndex} OF 24
+            </span>
+          )}
+          {spongePhase && (
+            <span className="rounded-[2px] bg-[#120e18] px-1.5 py-0.2 text-[9px] font-semibold text-[#c084fc] border border-[#c084fc]/35 uppercase tracking-wider">
+              {spongePhase}
+            </span>
+          )}
+        </div>
+        {rateBits && capacityBits && (
+          <div className="flex items-center gap-2 text-[9px] text-[#64748b] tabular-nums">
+            <span>RATE: <strong className="text-[#38bdf8]">{rateBits}b</strong></span>
+            <span>·</span>
+            <span>CAPACITY: <strong className="text-[#94a3b8]">{capacityBits}b</strong></span>
+          </div>
+        )}
+      </div>
+
+      {/* ─── Sub-step & Round Constant Banner ─────────────────────────── */}
+      {(subStep || roundConstant) && (
+        <div className="flex items-center justify-between bg-[#0c1017] px-2.5 py-1 rounded-[2px] border border-[#1f2937] text-[10px] tabular-nums">
+          <div className="flex items-center gap-2">
+            <span className="text-[#64748b] uppercase font-medium">PERMUTATION GATES:</span>
+            <span className="text-[#34d399] font-medium">{subStep || 'θ → ρ → π → χ → ι'}</span>
+          </div>
+          {roundConstant && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[#64748b] text-[9px]">ROUND CONSTANT ι (RC):</span>
+              <span className="text-[#e5a93b] font-semibold">{roundConstant}</span>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Dynamic 5x5 State Matrix Tables (Side-by-side on wide screens) */}
-      <div className="grid gap-3 xl:grid-cols-2 w-full">
+      {/* ─── Dynamic 5x5 State Matrix Tables (Pre / Post Round) ───────── */}
+      <div className={`grid gap-2.5 ${prevStateMatrix ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'} w-full`}>
         {prevStateMatrix && (
-          <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5 space-y-1.5">
+          <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2 space-y-1">
             <div className="flex items-center justify-between pb-1 border-b border-[#1f2937]">
               <span className="text-[9px] uppercase tracking-wider text-[#64748b] font-medium">
-                PRE-ROUND STATE: A[x, y]
+                PRE-ROUND 5×5 MATRIX: A[x, y]
               </span>
-              <span className="text-[8px] text-[#475569]">25 LANES</span>
+              <span className="text-[8px] text-[#475569]">25 LANES (1600 BITS)</span>
             </div>
             <StateGrid matrix={prevStateMatrix} />
           </div>
         )}
-        <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5 space-y-1.5">
+        <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2 space-y-1">
           <div className="flex items-center justify-between pb-1 border-b border-[#1f2937]">
             <span className="text-[9px] uppercase tracking-wider text-[#38bdf8] font-semibold">
-              {prevStateMatrix ? 'POST-ROUND STATE: A′[x, y]' : 'CURRENT 5×5 STATE MATRIX: A[x, y]'}
+              {prevStateMatrix ? 'POST-ROUND 5×5 MATRIX: A′[x, y]' : 'CURRENT 5×5 STATE MATRIX: A[x, y]'}
             </span>
-            <span className="text-[8px] text-[#475569]">25 LANES (1600 BITS)</span>
+            <span className="text-[8px] text-[#38bdf8] font-medium">25 LANES (1600 BITS)</span>
           </div>
           <StateGrid
             matrix={stateMatrix}
@@ -96,7 +141,7 @@ function StateGrid({
       <table className="border-collapse w-full table-fixed font-mono text-[10px] sm:text-[11px] tabular-nums">
         <thead>
           <tr>
-            <th className="p-1 text-[8px] text-[#475569] font-medium text-left w-9">Y\X</th>
+            <th className="p-1 text-[8px] text-[#475569] font-medium text-left w-8">Y\X</th>
             {[0, 1, 2, 3, 4].map((x) => (
               <th key={x} className="p-1 text-[8px] text-[#475569] font-medium text-center">
                 x={x}
@@ -120,7 +165,7 @@ function StateGrid({
                   <td
                     key={x}
                     title={`A[${x}, ${y}] = ${formatted.full}`}
-                    className={`border border-[#1f2937] px-1.5 py-1 text-center transition-colors overflow-hidden ${
+                    className={`border border-[#1f2937] px-1 py-1 text-center transition-colors overflow-hidden ${
                       changed
                         ? 'bg-[#16120b] text-[#e5a93b] font-semibold border-[#e5a93b]/40 phosphor-amber'
                         : 'bg-[#0e131b] text-[#38bdf8] font-medium'

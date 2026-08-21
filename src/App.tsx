@@ -162,12 +162,18 @@ export default function App() {
 
           {/* Upper Deck: Data Stream Input + Live Digest Output */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5 items-stretch">
-            <InputPanel input={engine.input} onInputChange={engine.setInput} />
+            <InputPanel
+              input={engine.input}
+              onInputChange={engine.setInput}
+              isXOF={engine.isXOF}
+              xofOutputBytes={engine.xofOutputBytes}
+              onXofOutputBytesChange={engine.setXofOutputBytes}
+            />
 
             <HashOutput
               digest={engine.digest}
               algorithmName={engine.algorithmName}
-              digestSize={engine.algorithm?.info.digestSize ?? 0}
+              digestSize={engine.isXOF ? engine.xofOutputBytes * 8 : (engine.algorithm?.info.digestSize ?? 0)}
               isComplete={isComplete}
             />
           </div>

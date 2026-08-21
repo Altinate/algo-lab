@@ -5,7 +5,7 @@ import { F, G, H, I } from './operations';
 
 export const md5Info: AlgorithmInfo = {
   name: 'MD5',
-  family: 'MD5',
+  family: 'MD',
   digestSize: 128,
   blockSize: 512,
   description: 'MD5 (Message-Digest Algorithm) is a widely used hash function producing a 128-bit hash value.',

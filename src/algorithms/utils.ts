@@ -24,6 +24,16 @@ export function hexToBytes(hex: string): Uint8Array {
   return bytes;
 }
 
+/** Convert a byte to an 8-bit hex string */
+export function uint8ToHex(n: number): string {
+  return (n & 0xff).toString(16).padStart(2, '0');
+}
+
+/** Convert a 16-bit unsigned integer to a 4-char hex string */
+export function uint16ToHex(n: number): string {
+  return (n & 0xffff).toString(16).padStart(4, '0');
+}
+
 /** Convert a byte to an 8-bit binary string */
 export function byteToBinary(byte: number): string {
   return byte.toString(2).padStart(8, '0');
@@ -50,6 +60,7 @@ export function uint32ToBinary(n: number): string {
 export function rightRotate32(value: number, r: number): number {
   return ((value >>> r) | (value << (32 - r))) >>> 0;
 }
+export const rotr32 = rightRotate32;
 
 /** Right-shift a 32-bit integer by r positions */
 export function rightShift32(value: number, r: number): number {
@@ -60,8 +71,9 @@ export function rightShift32(value: number, r: number): number {
 export function leftRotate32(value: number, r: number): number {
   return ((value << r) | (value >>> (32 - r))) >>> 0;
 }
+export const rotl32 = leftRotate32;
 
-/** Add two 32-bit integers with overflow (mod 2^32) */
+/** Add 32-bit integers with overflow (mod 2^32) */
 export function add32(...values: number[]): number {
   let sum = 0;
   for (const v of values) {
@@ -88,6 +100,15 @@ export function rightRotate64(value: bigint, r: number): bigint {
   const mask = 0xFFFFFFFFFFFFFFFFn;
   return ((value >> BigInt(r)) | ((value << BigInt(64 - r)) & mask)) & mask;
 }
+export const rotr64 = rightRotate64;
+
+/** Left-rotate a 64-bit BigInt by r positions */
+export function leftRotate64(value: bigint, r: number): bigint {
+  const mask = 0xFFFFFFFFFFFFFFFFn;
+  const s = BigInt(r);
+  return ((value << s) | (value >> (64n - s))) & mask;
+}
+export const rotl64 = leftRotate64;
 
 /** Right-shift a 64-bit BigInt by r positions */
 export function rightShift64(value: bigint, r: number): bigint {

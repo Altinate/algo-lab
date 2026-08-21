@@ -1,8 +1,8 @@
-# Cryptographic Logic Analyzer & Hash Visualizer
+# CryptoScope: Interactive Cryptographic Logic Analyzer
 
-An interactive, bit-level cryptographic hash visualizer and logic analyzer built with React 19, TypeScript, and Tailwind CSS v4. Step through the internal rounds, registers, bitwise barrel shifters, and lookup tables of 13 standard cryptographic and checksum algorithms.
+An interactive, bit-level cryptographic hash visualizer and logic analyzer built with React 19, TypeScript, and Tailwind CSS v4. Step through the internal rounds, registers, bitwise barrel shifters, and lookup tables of 34 standard cryptographic, checksum, and non-cryptographic hash algorithms.
 
-Inspired by [dmarman/sha256algorithm](https://github.com/dmarman/sha256algorithm), this project generalizes the concept into an extensible, high-density hardware instrument capable of visualizing Merkle-Damgård, Sponge, ARX/HAIFA, and Polynomial hash families.
+Inspired by [dmarman/sha256algorithm](https://github.com/dmarman/sha256algorithm), CryptoScope generalizes the concept into an extensible, high-density hardware instrument capable of visualizing Merkle-Damgård, Sponge/Keccak, Dual-Line RIPEMD, ARX/HAIFA, Miyaguchi-Preneel AES-like, and Polynomial hash families.
 
 <!-- SCREENSHOT_PLACEHOLDER: Add an application demo GIF or screenshot here (e.g. docs/preview.png) -->
 > _**Screenshot / Demo GIF Placeholder** (Add application recording here)_
@@ -14,52 +14,93 @@ Inspired by [dmarman/sha256algorithm](https://github.com/dmarman/sha256algorithm
 Cryptographic hash algorithms are often treated as black boxes that magically turn arbitrary text into fixed-length hex digests. Understanding *how* they achieve collision resistance, avalanche effect, and one-way security requires inspecting what happens at each bitwise clock cycle:
 
 - How message schedules ($W_t / M_g$) are expanded
-- How non-linear logic gates ($\text{Ch}, \text{Maj}, F, G, H, I$) diffuse entropy
+- How non-linear logic gates ($\text{Ch}, \text{Maj}, F, G, H, I, P_0, P_1$) diffuse entropy
 - How barrel shifters and modular addition disperse bit positions
 - How sponge state matrices ($A[x,y]$) absorb and permute data across $\theta, \rho, \pi, \chi, \iota$ stages
-- How CRC polynomial division XORs bitstreams against Galois field tables
+- How dual-line parallel architectures (RIPEMD) execute simultaneous left/right compression paths
+- How AES-like cipher constructions (Whirlpool) apply $8 \times 8$ byte substitutions ($S$-box), column rotations, and MDS MixRows matrix multiplication
+- How CRC and checksum polynomial division XORs bitstreams against Galois field tables
 
-This tool turns abstract cryptographic specifications (NIST FIPS 180-4, NIST FIPS 202, RFC 1321, RFC 7693) into an interactive, step-by-step logic analyzer.
+This tool turns abstract cryptographic specifications (NIST FIPS 180-4, NIST FIPS 202, RFC 1319, RFC 1320, RFC 1321, RFC 7693, ISO/IEC 10118-3, GB/T 32918.2-2016) into an interactive, step-by-step logic analyzer.
 
 ---
 
-## ✨ Features
+## ✨ Supported Algorithms (34 Algorithms across 11 Families)
 
-- **13 Implemented Algorithms across 6 Families**:
-  - **MD5**: 128-bit Message-Digest Algorithm (RFC 1321, 64 steps, $F/G/H/I$ gates)
-  - **SHA-1**: 160-bit Secure Hash Algorithm 1 (FIPS 180-1, 80 rounds, $Ch/\text{Parity}/Maj$ gates)
-  - **SHA-2 Family**:
-    - `SHA-224` (32-bit words, 64 rounds)
-    - `SHA-256` (32-bit words, 64 rounds, full ALU breakdown)
-    - `SHA-384` (64-bit BigInt words, 80 rounds)
-    - `SHA-512` (64-bit BigInt words, 80 rounds, 512-bit register bank)
-  - **SHA-3 / Keccak Family**:
-    - `SHA3-256` (1088-bit rate, 24-round Keccak-f[1600] permutation)
-    - `SHA3-512` (576-bit rate, 24-round Keccak-f[1600] permutation)
-    - `Keccak-256` (Ethereum standard, `0x01` domain separation)
-  - **BLAKE Family**:
-    - `BLAKE2s` (32-bit words, 10 rounds, $4 \times 4$ matrix, column/diagonal $G$-mixing)
-    - `BLAKE2b` (64-bit words, 12 rounds, $4 \times 4$ matrix, column/diagonal $G$-mixing)
-    - `BLAKE3` (32-bit words, 7 rounds, tree/chunk compression model)
-  - **CRC Family**:
-    - `CRC32` (Ethernet / ZIP polynomial `0xEDB88320`, 256-entry lookup ROM)
+- **Legacy MD Family** (RFC 1319, RFC 1320, RFC 1321):
+  - `MD2` (128-bit checksum byte substitution & 18-round permutation)
+  - `MD4` (128-bit 3-round ARX compression)
+  - `MD5` (128-bit 4-round ARX compression with $F/G/H/I$ gates)
 
-- **Dedicated Hardware Telemetry Visualizers**:
-  - **3-Bus Logic Analyzer (`RoundComputationView`)**: Persistent 3-column instrument with Message Buffer ($W$), Hardware ALU + Dynamic Register Bank ($A..H$), and Firmware ROM Constants Table ($K$).
-  - **$5 \times 5$ State Matrix Inspector (`StateMatrixView`)**: Fluid 1600-bit Keccak state matrix with 64-bit hex lane display, smart middle-truncation on compact viewports, and sponge phase tracking.
-  - **$4 \times 4$ ARX Mixing Matrix (`MixingFunctionView`)**: 16-word work state with column and diagonal $G$-mixing operation cards and $\Sigma$ message permutation telemetry.
-  - **Polynomial Stream Engine (`XorTableView`)**: 5-step FCS-32 register transformation pipeline with an active 256-entry polynomial ROM table.
+- **SHA-1 Family** (NIST FIPS 180-1):
+  - `SHA-1` (160-bit 5-register bank, 80 rounds with dynamic $Ch/\text{Parity}/Maj$ logic gates)
 
-- **Playback & Debugger Controls**:
-  - Step Forward / Step Back / Play / Pause
-  - Phase Jump (Pre-processing $\rightarrow$ Compression / Permutation $\rightarrow$ Finalization)
-  - Scrub bar with interactive step counter
-  - Variable playback speed slider (0.25× to 10×)
-  - Monospace Hex / Binary Octet toggles
+- **SHA-2 Family** (NIST FIPS 180-4):
+  - `SHA-224` (32-bit words, 64 rounds)
+  - `SHA-256` (32-bit words, 64 rounds, full hardware ALU pipeline breakdown)
+  - `SHA-384` (64-bit BigInt words, 80 rounds)
+  - `SHA-512` (64-bit BigInt words, 80 rounds, 512-bit register bank)
+  - `SHA-512/224` (Truncated 224-bit output with FIPS 180-4 initial constants)
+  - `SHA-512/256` (Truncated 256-bit output with FIPS 180-4 initial constants)
 
-- **Collapsible Ergonomic UI**:
-  - Accordion algorithm family groupings
-  - Global full-sidebar collapse toggle for maximum analyzer workspace
+- **SHA-3 & Keccak Family** (NIST FIPS 202 / Keccak team):
+  - `SHA3-224` (1152-bit rate, 24-round Keccak-f[1600] permutation)
+  - `SHA3-256` (1088-bit rate, 24-round Keccak-f[1600] permutation)
+  - `SHA3-384` (832-bit rate, 24-round Keccak-f[1600] permutation)
+  - `SHA3-512` (576-bit rate, 24-round Keccak-f[1600] permutation)
+  - `Keccak-224`, `Keccak-256`, `Keccak-384`, `Keccak-512` (Original Keccak padding with `0x01` domain separation)
+  - `SHAKE128` (Extendable Output Function / XOF with interactive output length controls)
+  - `SHAKE256` (Extendable Output Function / XOF with interactive output length controls)
+
+- **RIPEMD Family** (ISO/IEC 10118-3 / Hans Dobbertin, Antoon Bosselaers, Bart Preneel):
+  - `RIPEMD-128` (128-bit dual parallel left/right execution lines)
+  - `RIPEMD-160` (160-bit dual parallel lines, standard Bitcoin Base58Check address generator)
+  - `RIPEMD-256` (256-bit dual parallel lines with inter-round register exchange)
+  - `RIPEMD-320` (320-bit dual parallel lines with inter-round register exchange)
+
+- **BLAKE Family** (RFC 7693 / BLAKE3 team):
+  - `BLAKE2s` (32-bit words, 10 rounds, $4 \times 4$ matrix, column/diagonal $G$-mixing)
+  - `BLAKE2b` (64-bit words, 12 rounds, $4 \times 4$ matrix, column/diagonal $G$-mixing)
+  - `BLAKE3` (32-bit words, 7 rounds, tree/chunk compression model)
+
+- **CRC & Checksum Family**:
+  - `CRC-16` (CRC-16-IBM / ANSI, 256-entry polynomial table `0xA001`)
+  - `CRC32` (Ethernet / ZIP polynomial `0xEDB88320`, 256-entry lookup ROM)
+  - `Adler-32` (RFC 1950 zlib / PNG checksum with dual 16-bit modulo 65521 accumulators)
+
+- **Non-Cryptographic Fast Hashes (XXHash)** (Yann Collet):
+  - `XXH32` (32-bit RAM-speed hash with 4 parallel accumulators and prime multiplication)
+  - `XXH64` (64-bit BigInt high-throughput hash with 4 parallel accumulators and avalanche finalizer)
+
+- **National Standards**:
+  - `SM3` (Chinese National Standard GB/T 32918.2-2016 / ISO/IEC 10118-3:2018 with $P_0, P_1$ non-linear permutations)
+
+- **Cipher-Based Hash Structures**:
+  - `Whirlpool` (ISO/IEC 10118-3 / Barreto-Rijmen 512-bit Miyaguchi-Preneel hash with 10-round AES-like $8 \times 8$ byte state transformations)
+
+---
+
+## 🔬 Dedicated Hardware Telemetry Visualizers
+
+- **3-Bus Logic Analyzer (`RoundComputationView`)**:
+  - Persistent 3-column instrument with Message Buffer ($W$), Hardware ALU + Dynamic Register Bank ($A..H$ or Left/Right dual registers), and Firmware ROM Constants Table ($K$).
+- **$5 \times 5$ / $8 \times 8$ State Matrix Inspector (`StateMatrixView`)**:
+  - Fluid 1600-bit Keccak state matrix and 512-bit Whirlpool matrix with 64-bit hex lane display, lane diff highlights, and sponge phase tracking.
+- **$4 \times 4$ ARX Mixing Matrix (`MixingFunctionView`)**:
+  - 16-word work state with column and diagonal $G$-mixing operation cards and $\Sigma$ message permutation telemetry.
+- **Polynomial Stream Engine (`XorTableView`)**:
+  - 5-step FCS-32 and CRC-16 register transformation pipeline with an active 256-entry polynomial ROM table.
+
+---
+
+## 🎛️ Playback & Debugger Controls
+
+- **Interactive Transport**: Step Forward, Step Back, Play, Pause, Scrub bar with active step counter.
+- **Phase Navigation**: Jump directly between Preprocessing $\rightarrow$ Compression / Permutation $\rightarrow$ Finalization.
+- **Variable Playback Speed**: Smooth slider from 0.25× to 10×.
+- **Radix Switching**: Monospace Hex / Binary Octet toggles across all registers and tables.
+- **XOF Dynamic Output Length Bar**: Real-time byte length selector for SHAKE128 & SHAKE256 (16B, 32B, 64B, 128B, 256B presets + custom numeric input).
+- **Collapsible Sidebar**: Grouped accordion families with global full-sidebar toggle for maximum telemetry workspace.
 
 ---
 
@@ -82,8 +123,8 @@ This tool turns abstract cryptographic specifications (NIST FIPS 180-4, NIST FIP
 ### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/hash-visualizer.git
-cd hash-visualizer
+git clone https://github.com/<your-username>/cryptoscope.git
+cd cryptoscope
 
 # Install dependencies
 npm install
@@ -98,7 +139,7 @@ Open `http://localhost:5173` in your browser.
 # Run development server
 npm run dev
 
-# Run full test suite with Vitest
+# Run full Vitest test suite (35 test files, 130 tests)
 npm run test:run
 
 # Build production bundle
@@ -114,24 +155,32 @@ npm run preview
 
 ```text
 ├── src/
-│   ├── algorithms/              # Algorithm plugins & math engines
+│   ├── algorithms/              # 34 Algorithm plugins & math engines
+│   │   ├── md2/                 # MD2 (RFC 1319)
+│   │   ├── md4/                 # MD4 (RFC 1320)
 │   │   ├── md5/                 # MD5 (RFC 1321)
 │   │   ├── sha1/                # SHA-1 (FIPS 180-1)
 │   │   ├── sha256/              # SHA-224 & SHA-256 (FIPS 180-4)
-│   │   ├── sha512/              # SHA-384 & SHA-512 (64-bit engine)
-│   │   ├── keccak/              # Keccak-256, SHA3-256, SHA3-512 (FIPS 202)
+│   │   ├── sha512/              # SHA-384, SHA-512, SHA-512/224, SHA-512/256
+│   │   ├── keccak/              # Keccak (224/256/384/512), SHA-3, SHAKE (128/256)
+│   │   ├── ripemd/              # RIPEMD-128/160/256/320 dual-line engine
 │   │   ├── blake2/              # BLAKE2s & BLAKE2b (RFC 7693)
 │   │   ├── blake3/              # BLAKE3 single-chunk engine
+│   │   ├── crc16/               # CRC-16-IBM lookup engine
 │   │   ├── crc32/               # CRC32 polynomial lookup
-│   │   ├── registry.ts          # Central algorithm registry
-│   │   ├── types.ts             # Plugin interfaces & step definitions
+│   │   ├── adler32/             # Adler-32 dual 16-bit checksum
+│   │   ├── xxhash/              # XXH32 & XXH64 fast non-crypto engines
+│   │   ├── sm3/                 # SM3 Chinese national standard
+│   │   ├── whirlpool/           # Whirlpool 512-bit Miyaguchi-Preneel cipher hash
+│   │   ├── registry.ts          # Central algorithm registry & family grouping
+│   │   ├── types.ts             # Plugin interfaces & canonical step definitions
 │   │   └── utils.ts             # Bitwise math & binary formatting helpers
 │   ├── components/
 │   │   ├── visualizations/      # Hardware telemetry renderers
-│   │   │   ├── RoundComputationView.tsx # 3-bus analyzer (MD5, SHA-1, SHA-2)
-│   │   │   ├── StateMatrixView.tsx      # 5x5 Keccak state matrix
+│   │   │   ├── RoundComputationView.tsx # 3-bus analyzer (MD, SHA-1, SHA-2, RIPEMD, SM3, XXH)
+│   │   │   ├── StateMatrixView.tsx      # 5x5 Keccak & 8x8 Whirlpool matrix
 │   │   │   ├── MixingFunctionView.tsx   # 4x4 BLAKE mixing matrix
-│   │   │   ├── XorTableView.tsx         # CRC32 polynomial pipeline
+│   │   │   ├── XorTableView.tsx         # CRC-16, CRC32, Adler-32 polynomial pipeline
 │   │   │   └── ...
 │   │   ├── layout/              # Header, sidebar, controls, status bar
 │   │   └── controls/            # Playback buttons, speed slider, scrub bar
@@ -139,38 +188,20 @@ npm run preview
 │   ├── App.tsx                  # Main workspace container
 │   ├── App.css                  # Hardware instrument design tokens
 │   └── main.tsx
-├── tests/                       # Vitest official test vector suites
-│   ├── algorithms/              # 13 algorithm test suites
-│   └── registry.test.ts
-├── AGENTS.md                    # AI agent guidelines & canonical contracts
+├── tests/                       # Vitest official test vector suites (35 files, 130 tests)
+├── AGENTS.md                    # Developer & AI Agent Reference Manual
 └── README.md
 ```
-
-*(For detailed architectural specifications and data contracts, see [AGENTS.md](AGENTS.md).)*
-
----
-
-## 🧩 Adding a New Algorithm
-
-All algorithms are implemented as modular plugins implementing the `AlgorithmPlugin` interface:
-
-1. Create directory `src/algorithms/<name>/` with constants, operations, and `index.ts`.
-2. Implement `compute(input: string): ComputationResult` emitting structured `ComputationStep[]`.
-3. Choose the appropriate visualization type (`round-computation`, `state-matrix`, `mixing-function`, or `xor-table`) and emit its canonical data shape.
-4. Register the plugin in `src/algorithms/registry.ts`.
-5. Add official test vectors in `tests/algorithms/<name>.test.ts` and verify with `npm run test:run`.
-
-See [AGENTS.md](AGENTS.md) for full step-by-step developer guidelines and canonical data shapes.
 
 ---
 
 ## 📜 License
 
-This project is open source and available under the [MIT License](LICENSE) *(confirm license before distribution)*.
+This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
 ## 🙏 Credits & Acknowledgments
 
 - Inspired by [dmarman/sha256algorithm](https://github.com/dmarman/sha256algorithm) by Daniel Marman.
-- Standard reference specifications: NIST FIPS 180-4 (SHA-1/SHA-2), NIST FIPS 202 (SHA-3/Keccak), RFC 1321 (MD5), RFC 7693 (BLAKE2), and the BLAKE3 team.
+- Standard reference specifications: NIST FIPS 180-4 (SHA-1/SHA-2), NIST FIPS 202 (SHA-3/Keccak), RFC 1319 (MD2), RFC 1320 (MD4), RFC 1321 (MD5), RFC 7693 (BLAKE2), ISO/IEC 10118-3 (RIPEMD, Whirlpool, SM3), GB/T 32918.2-2016 (SM3), and RFC 1950 (Adler-32).

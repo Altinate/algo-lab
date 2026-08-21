@@ -1,6 +1,6 @@
 # Deployment & Boot Service Guide
 
-This folder contains scripts to build, deploy, run, and configure the Hash Algorithm Visualizer to start automatically on system boot.
+This folder contains scripts to build, deploy, run, and configure CryptoScope to start automatically on system boot.
 
 ---
 

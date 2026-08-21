@@ -3,7 +3,7 @@ import { formatBinaryGroups } from '../../algorithms/utils';
 
 interface Props {
   label: string;
-  binary: string;
+  binary?: string;
   hex?: string;
   opType?: 'input' | 'rot' | 'shr' | 'xor' | 'and' | 'not' | 'add' | 'result';
   tag?: string;
@@ -77,8 +77,8 @@ export default function BitwiseOperationRow({
   tag,
   isResult = false,
 }: Props) {
-  const cleanBinary = binary.replace(/\s+/g, '');
-  const formattedBinary = formatBinaryGroups(cleanBinary, 8);
+  const cleanBinary = binary ? binary.replace(/\s+/g, '') : '';
+  const formattedBinary = cleanBinary ? formatBinaryGroups(cleanBinary, 8) : '';
   const st = opStyles[opType] || opStyles.input;
 
   return (

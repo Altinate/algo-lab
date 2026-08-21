@@ -67,6 +67,9 @@ export default function RoundComputationView({ step }: Props) {
   // SHA-1 sub-computation details
   const sha1Step = data.sha1Step as any;
 
+  // RIPEMD dual-line sub-computation details
+  const ripemdStep = data.ripemdStep as any;
+
   // Hash updates
   const updates = data.updates as Array<{
     label: string;
@@ -170,7 +173,7 @@ export default function RoundComputationView({ step }: Props) {
         {/* COLUMN 2: HARDWARE ALU & REGISTER BANK */}
         {/* ========================================================================= */}
         <div className="space-y-2.5 min-w-0">
-          {/* Dynamic Register Bank (Registers a–h, a–e, a–d; 32-bit or 64-bit) */}
+          {/* Dynamic Register Bank (Registers a–h, a–e, a–d; 32-bit or 64-bit, or Left/Right dual lines) */}
           <div className="rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2">
             <div className="flex items-center justify-between mb-1.5 pb-1 border-b border-[#1f2937]">
               <div className="flex items-center gap-1.5">
@@ -184,25 +187,174 @@ export default function RoundComputationView({ step }: Props) {
               </span>
             </div>
 
-            <div className={`grid gap-1 ${displayVars.length <= 4 ? 'grid-cols-2 sm:grid-cols-4' : displayVars.length <= 5 ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'}`}>
-              {displayVars.map((v, idx) => (
-                <div
-                  key={v.label}
-                  className="rounded-[2px] border border-[#1f2937] bg-[#0e131b] p-1 tabular-nums"
-                >
-                  <div className="flex items-center justify-between text-[10px] font-medium mb-0.5">
-                    <span className="text-[#64748b] text-[8px]">0x{idx} REG.{v.label}</span>
-                    <span className="text-[#38bdf8] font-medium text-[11px]">0x{v.hex}</span>
+            {displayVars.some(v => v.label.includes('_L')) && displayVars.some(v => v.label.includes('_R')) ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {/* Left Parallel Registers */}
+                <div className="rounded-[2px] border border-[#1f2937]/80 bg-[#090c10] p-1.5">
+                  <div className="text-[8px] uppercase tracking-wider text-[#38bdf8] font-semibold mb-1 flex items-center gap-1">
+                    <span className="h-1 w-1 bg-[#38bdf8]" />
+                    <span>LEFT LINE REGISTERS (A_L ..)</span>
                   </div>
-                  {binaryMode && v.binary && (
-                    <div className="text-[7.5px] text-[#64748b] tracking-tighter truncate select-all">
-                      {formatBinaryGroups(v.binary, 8)}
-                    </div>
-                  )}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-1">
+                    {displayVars.filter(v => v.label.includes('_L')).map((v, idx) => (
+                      <div key={v.label} className="rounded-[2px] border border-[#1f2937] bg-[#0e131b] p-1 tabular-nums">
+                        <div className="flex items-center justify-between text-[9px] font-medium mb-0.5">
+                          <span className="text-[#64748b] text-[8px]">{v.label}</span>
+                          <span className="text-[#38bdf8] font-medium text-[10px]">0x{v.hex}</span>
+                        </div>
+                        {binaryMode && v.binary && (
+                          <div className="text-[7px] text-[#64748b] tracking-tighter truncate select-all">
+                            {formatBinaryGroups(v.binary, 8)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
+
+                {/* Right Parallel Registers */}
+                <div className="rounded-[2px] border border-[#1f2937]/80 bg-[#090c10] p-1.5">
+                  <div className="text-[8px] uppercase tracking-wider text-[#e5a93b] font-semibold mb-1 flex items-center gap-1">
+                    <span className="h-1 w-1 bg-[#e5a93b]" />
+                    <span>RIGHT LINE REGISTERS (A_R ..)</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-1">
+                    {displayVars.filter(v => v.label.includes('_R')).map((v, idx) => (
+                      <div key={v.label} className="rounded-[2px] border border-[#1f2937] bg-[#0e131b] p-1 tabular-nums">
+                        <div className="flex items-center justify-between text-[9px] font-medium mb-0.5">
+                          <span className="text-[#64748b] text-[8px]">{v.label}</span>
+                          <span className="text-[#e5a93b] font-medium text-[10px]">0x{v.hex}</span>
+                        </div>
+                        {binaryMode && v.binary && (
+                          <div className="text-[7px] text-[#64748b] tracking-tighter truncate select-all">
+                            {formatBinaryGroups(v.binary, 8)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className={`grid gap-1 ${displayVars.length <= 4 ? 'grid-cols-2 sm:grid-cols-4' : displayVars.length <= 5 ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-4'}`}>
+                {displayVars.map((v, idx) => (
+                  <div
+                    key={v.label}
+                    className="rounded-[2px] border border-[#1f2937] bg-[#0e131b] p-1 tabular-nums"
+                  >
+                    <div className="flex items-center justify-between text-[10px] font-medium mb-0.5">
+                      <span className="text-[#64748b] text-[8px]">0x{idx} REG.{v.label}</span>
+                      <span className="text-[#38bdf8] font-medium text-[11px]">0x{v.hex}</span>
+                    </div>
+                    {binaryMode && v.binary && (
+                      <div className="text-[7.5px] text-[#64748b] tracking-tighter truncate select-all">
+                        {formatBinaryGroups(v.binary, 8)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* ===================================================================== */}
+          {/* RIPEMD DUAL PARALLEL EXECUTION TELEMETRY (LEFT LINE & RIGHT LINE) */}
+          {/* ===================================================================== */}
+          {ripemdStep && (
+            <div className="space-y-2 rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5">
+              <div className="flex items-center justify-between border-b border-[#1f2937] pb-1">
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-[#38bdf8] flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 bg-[#38bdf8]" />
+                  DUAL PARALLEL LINE ARCHITECTURE (STEP {roundIdx !== undefined ? (roundIdx % 16) + 1 : 1} OF 16)
+                </span>
+                <span className="text-[8px] text-[#e5a93b] tabular-nums font-semibold">
+                  SIMULTANEOUS LEFT & RIGHT EXECUTION
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {/* LEFT LINE */}
+                <div className="rounded-[2px] border border-[#1f2937] bg-[#0e131b] p-2 space-y-1.5">
+                  <div className="flex items-center justify-between border-b border-[#1f2937] pb-0.5">
+                    <span className="text-[9px] font-semibold uppercase tracking-wider text-[#38bdf8]">
+                      LEFT LINE: {ripemdStep.leftLine.funcName.toUpperCase()}
+                    </span>
+                    <span className="text-[7.5px] text-[#64748b]">
+                      {ripemdStep.leftLine.formula}
+                    </span>
+                  </div>
+
+                  {/* 1. Logic Function */}
+                  <div className="space-y-0.5">
+                    <div className="text-[8px] font-medium uppercase tracking-wider text-[#34d399] flex items-center gap-1">
+                      <span className="h-1 w-1 bg-[#34d399]" />
+                      <span>1. LOGIC {ripemdStep.leftLine.funcName.toUpperCase()}</span>
+                    </div>
+                    <BitwiseOperationRow label="REG.B_L" hex={ripemdStep.leftLine.b.hex} binary={ripemdStep.leftLine.b.binary} opType="input" />
+                    <BitwiseOperationRow label="REG.C_L" hex={ripemdStep.leftLine.c.hex} binary={ripemdStep.leftLine.c.binary} opType="input" />
+                    <BitwiseOperationRow label="REG.D_L" hex={ripemdStep.leftLine.d.hex} binary={ripemdStep.leftLine.d.binary} opType="input" />
+                    <BitwiseOperationRow label="f_L OUT" hex={ripemdStep.leftLine.fResult.hex} binary={ripemdStep.leftLine.fResult.binary} opType="xor" tag={ripemdStep.leftLine.funcName} isResult />
+                  </div>
+
+                  {/* 2. Modulo Accumulator */}
+                  <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
+                    <div className="text-[8px] font-medium uppercase tracking-wider text-[#c084fc] flex items-center gap-1">
+                      <span className="h-1 w-1 bg-[#c084fc]" />
+                      <span>2. ACCUMULATOR & ROTL {ripemdStep.leftLine.shift}</span>
+                    </div>
+                    <BitwiseOperationRow label="REG.A_L" hex={ripemdStep.leftLine.a.hex} binary={ripemdStep.leftLine.a.binary} opType="add" />
+                    <BitwiseOperationRow label="f_L" hex={ripemdStep.leftLine.fResult.hex} binary={ripemdStep.leftLine.fResult.binary} opType="add" />
+                    <BitwiseOperationRow label={`X[${ripemdStep.leftLine.xIndex}]`} hex={ripemdStep.leftLine.xVal.hex} binary={ripemdStep.leftLine.xVal.binary} opType="add" />
+                    <BitwiseOperationRow label="K_L" hex={ripemdStep.leftLine.kHex} opType="add" />
+                    {ripemdStep.leftLine.e && (
+                      <BitwiseOperationRow label="REG.E_L" hex={ripemdStep.leftLine.e.hex} binary={ripemdStep.leftLine.e.binary} opType="add" />
+                    )}
+                    <BitwiseOperationRow label="T_L (NEW B_L)" hex={ripemdStep.leftLine.tResult.hex} binary={ripemdStep.leftLine.tResult.binary} opType="result" tag={`ROTL ${ripemdStep.leftLine.shift}`} isResult />
+                  </div>
+                </div>
+
+                {/* RIGHT LINE */}
+                <div className="rounded-[2px] border border-[#1f2937] bg-[#0e131b] p-2 space-y-1.5">
+                  <div className="flex items-center justify-between border-b border-[#1f2937] pb-0.5">
+                    <span className="text-[9px] font-semibold uppercase tracking-wider text-[#e5a93b]">
+                      RIGHT LINE: {ripemdStep.rightLine.funcName.toUpperCase()}
+                    </span>
+                    <span className="text-[7.5px] text-[#64748b]">
+                      {ripemdStep.rightLine.formula}
+                    </span>
+                  </div>
+
+                  {/* 1. Logic Function */}
+                  <div className="space-y-0.5">
+                    <div className="text-[8px] font-medium uppercase tracking-wider text-[#34d399] flex items-center gap-1">
+                      <span className="h-1 w-1 bg-[#34d399]" />
+                      <span>1. LOGIC {ripemdStep.rightLine.funcName.toUpperCase()}</span>
+                    </div>
+                    <BitwiseOperationRow label="REG.B_R" hex={ripemdStep.rightLine.b.hex} binary={ripemdStep.rightLine.b.binary} opType="input" />
+                    <BitwiseOperationRow label="REG.C_R" hex={ripemdStep.rightLine.c.hex} binary={ripemdStep.rightLine.c.binary} opType="input" />
+                    <BitwiseOperationRow label="REG.D_R" hex={ripemdStep.rightLine.d.hex} binary={ripemdStep.rightLine.d.binary} opType="input" />
+                    <BitwiseOperationRow label="f_R OUT" hex={ripemdStep.rightLine.fResult.hex} binary={ripemdStep.rightLine.fResult.binary} opType="xor" tag={ripemdStep.rightLine.funcName} isResult />
+                  </div>
+
+                  {/* 2. Modulo Accumulator */}
+                  <div className="space-y-0.5 pt-1 border-t border-[#1f2937]">
+                    <div className="text-[8px] font-medium uppercase tracking-wider text-[#c084fc] flex items-center gap-1">
+                      <span className="h-1 w-1 bg-[#c084fc]" />
+                      <span>2. ACCUMULATOR & ROTL {ripemdStep.rightLine.shift}</span>
+                    </div>
+                    <BitwiseOperationRow label="REG.A_R" hex={ripemdStep.rightLine.a.hex} binary={ripemdStep.rightLine.a.binary} opType="add" />
+                    <BitwiseOperationRow label="f_R" hex={ripemdStep.rightLine.fResult.hex} binary={ripemdStep.rightLine.fResult.binary} opType="add" />
+                    <BitwiseOperationRow label={`X[${ripemdStep.rightLine.xIndex}]`} hex={ripemdStep.rightLine.xVal.hex} binary={ripemdStep.rightLine.xVal.binary} opType="add" />
+                    <BitwiseOperationRow label="K_R" hex={ripemdStep.rightLine.kHex} opType="add" />
+                    {ripemdStep.rightLine.e && (
+                      <BitwiseOperationRow label="REG.E_R" hex={ripemdStep.rightLine.e.hex} binary={ripemdStep.rightLine.e.binary} opType="add" />
+                    )}
+                    <BitwiseOperationRow label="T_R (NEW B_R)" hex={ripemdStep.rightLine.tResult.hex} binary={ripemdStep.rightLine.tResult.binary} opType="result" tag={`ROTL ${ripemdStep.rightLine.shift}`} isResult />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* SHA-2 (SHA-256 / SHA-512) ALU Circuit Flow Diagram */}
           {(temp1 || temp2) && (

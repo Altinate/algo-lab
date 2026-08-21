@@ -7,6 +7,9 @@ export interface HashEngineState {
   setAlgorithmName: (name: string) => void;
   input: string;
   setInput: (input: string) => void;
+  xofOutputBytes: number;
+  setXofOutputBytes: (bytes: number) => void;
+  isXOF: boolean;
   algorithm: AlgorithmPlugin | undefined;
   algorithms: AlgorithmPlugin[];
   algorithmsByFamily: Map<string, AlgorithmPlugin[]>;
@@ -17,27 +20,41 @@ export interface HashEngineState {
 export function useHashEngine(): HashEngineState {
   const [algorithmName, setAlgorithmName] = useState('SHA-256');
   const [input, setInput] = useState('');
+  const [xofOutputBytes, setXofOutputBytes] = useState<number>(32);
 
   const algorithm = useMemo(() => getAlgorithm(algorithmName), [algorithmName]);
   const algorithms = useMemo(() => listAlgorithms(), []);
   const algorithmsByFamily = useMemo(() => getAlgorithmsByFamily(), []);
 
+  const isXOF = Boolean(algorithm?.info.isXOF || algorithmName.startsWith('SHAKE'));
+
   const result = useMemo(() => {
     if (!algorithm) return null;
     try {
-      return algorithm.compute(input);
+      const options = isXOF ? { outputBytes: xofOutputBytes } : undefined;
+      return algorithm.compute(input, options);
     } catch {
       return null;
     }
-  }, [algorithm, input]);
+  }, [algorithm, input, isXOF, xofOutputBytes]);
+
+  const handleSetAlgorithmName = useCallback((name: string) => {
+    setAlgorithmName(name);
+    if (name === 'SHAKE128') {
+      setXofOutputBytes(32);
+    } else if (name === 'SHAKE256') {
+      setXofOutputBytes(64);
+    }
+  }, []);
 
   return {
     algorithmName,
-    setAlgorithmName: useCallback((name: string) => {
-      setAlgorithmName(name);
-    }, []),
+    setAlgorithmName: handleSetAlgorithmName,
     input,
     setInput,
+    xofOutputBytes,
+    setXofOutputBytes,
+    isXOF,
     algorithm,
     algorithms,
     algorithmsByFamily,

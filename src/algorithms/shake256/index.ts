@@ -11,12 +11,20 @@ export const shake256Info: AlgorithmInfo = {
   security: 'secure',
   year: 2015,
   designers: ['Guido Bertoni', 'Joan Daemen', 'Michaël Peeters', 'Gilles Van Assche'],
+  isXOF: true,
 };
 
 export class SHAKE256Plugin implements AlgorithmPlugin {
   info = shake256Info;
 
-  compute(input: string, outputBits: number = 512) {
+  compute(input: string, options?: Record<string, unknown>) {
+    let outputBits = 512;
+    if (typeof options?.outputBytes === 'number' && options.outputBytes > 0) {
+      outputBits = options.outputBytes * 8;
+    } else if (typeof options?.outputBits === 'number' && options.outputBits > 0) {
+      outputBits = options.outputBits;
+    }
+
     return computeKeccakFamily(input, {
       rate: 1088,
       capacity: 512,

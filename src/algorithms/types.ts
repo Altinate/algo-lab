@@ -14,10 +14,6 @@ export interface ComputationStep {
 
   /**
    * The intermediate state to visualize. Structure varies per algorithm.
-   * Examples:
-   *   - SHA-256 padding step: { binary: "01101000...", paddedBinary: "01101000...1...0...length" }
-   *   - SHA-256 round step: { a,b,c,d,e,f,g,h values, T1, T2, W[i], K[i] }
-   *   - MD5 round step: { A,B,C,D values, F, g, round function result }
    */
   data: Record<string, unknown>;
 
@@ -32,9 +28,9 @@ export type VisualizationType =
   | 'binary-transform'    // Show binary/hex before→after (padding, chunking)
   | 'round-computation'   // Show working variables + round function
   | 'state-matrix'        // Show state as a matrix (SHA-3 / Keccak)
-  | 'xor-table'           // Show XOR/polynomial operations (CRC32)
+  | 'xor-table'           // Show XOR/polynomial operations (CRC32, Adler32)
   | 'merkle-tree'         // Show tree structure (BLAKE3)
-  | 'mixing-function'     // Show G mixing rounds (BLAKE2)
+  | 'mixing-function'     // Show G mixing rounds (BLAKE2, BLAKE3)
   | 'final-digest'        // Show final concatenation → hex output
   | 'generic';            // Fallback: render data as labeled key-value pairs
 
@@ -43,7 +39,7 @@ export interface AlgorithmInfo {
   /** Display name (e.g., "SHA-256") */
   name: string;
 
-  /** Algorithm family for grouping in selector (e.g., "SHA-2", "SHA-3", "BLAKE") */
+  /** Algorithm family for grouping in selector (e.g., "SHA-2", "SHA-3", "BLAKE", "RIPEMD", "Checksum", "Non-Crypto", "Legacy") */
   family: string;
 
   /** Output digest size in bits */
@@ -69,6 +65,9 @@ export interface AlgorithmInfo {
 
   /** Designer(s) */
   designers: string[];
+
+  /** Whether the algorithm is an extendable-output function with variable length (e.g. SHAKE) */
+  isXOF?: boolean;
 }
 
 /** The interface every algorithm plugin must implement */
@@ -78,13 +77,12 @@ export interface AlgorithmPlugin {
 
   /**
    * Compute the hash of the input and return ALL intermediate steps.
-   * This is NOT a streaming API — it computes everything upfront
-   * and returns the full step list for playback.
    *
    * @param input - The raw input string (UTF-8)
+   * @param options - Optional computation options (e.g., variable output length for XOFs)
    * @returns An object with the final hex digest and ordered step array
    */
-  compute(input: string): ComputationResult;
+  compute(input: string, options?: Record<string, unknown>): ComputationResult;
 }
 
 export interface ComputationResult {

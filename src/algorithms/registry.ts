@@ -5,7 +5,9 @@
 
 import type { AlgorithmPlugin } from './types';
 
-// MD Family
+// Legacy MD Family
+import md2Plugin from './md2';
+import md4Plugin from './md4';
 import md5Plugin from './md5';
 
 // SHA-1
@@ -31,13 +33,31 @@ import keccak512Plugin from './keccak-512';
 import shake128Plugin from './shake128';
 import shake256Plugin from './shake256';
 
+// RIPEMD Family
+import ripemd128Plugin from './ripemd128';
+import ripemd160Plugin from './ripemd160';
+import ripemd256Plugin from './ripemd256';
+import ripemd320Plugin from './ripemd320';
+
 // BLAKE Family
 import blake2sPlugin from './blake2s';
 import blake2bPlugin from './blake2b';
 import blake3Plugin from './blake3';
 
-// CRC Family
+// CRC & Checksum Family
+import crc16Plugin from './crc16';
 import crc32Plugin from './crc32';
+import adler32Plugin from './adler32';
+
+// Non-Cryptographic (XXHash)
+import xxh32Plugin from './xxhash/xxh32';
+import xxh64Plugin from './xxhash/xxh64';
+
+// National Standards
+import sm3Plugin from './sm3';
+
+// Cipher-Based Hash
+import whirlpoolPlugin from './whirlpool';
 
 const registry = new Map<string, AlgorithmPlugin>();
 
@@ -47,9 +67,11 @@ function register(plugin: AlgorithmPlugin) {
   }
 }
 
-// Register all algorithms
+// Register all algorithms (30 algorithms across 10 families)
 [
-  // MD
+  // Legacy MD
+  md2Plugin,
+  md4Plugin,
   md5Plugin,
 
   // SHA-1
@@ -75,13 +97,31 @@ function register(plugin: AlgorithmPlugin) {
   shake128Plugin,
   shake256Plugin,
 
+  // RIPEMD
+  ripemd128Plugin,
+  ripemd160Plugin,
+  ripemd256Plugin,
+  ripemd320Plugin,
+
   // BLAKE
   blake2sPlugin,
   blake2bPlugin,
   blake3Plugin,
 
-  // CRC
+  // Checksums & CRC
+  crc16Plugin,
   crc32Plugin,
+  adler32Plugin,
+
+  // Non-Cryptographic
+  xxh32Plugin,
+  xxh64Plugin,
+
+  // National Standards
+  sm3Plugin,
+
+  // Cipher-Based
+  whirlpoolPlugin,
 ].forEach(register);
 
 /** Get an algorithm plugin by name */
@@ -97,7 +137,19 @@ export function listAlgorithms(): AlgorithmPlugin[] {
 /** Get algorithms grouped by family */
 export function getAlgorithmsByFamily(): Map<string, AlgorithmPlugin[]> {
   const families = new Map<string, AlgorithmPlugin[]>();
-  const familyOrder = ['MD5', 'SHA-1', 'SHA-2', 'SHA-3', 'BLAKE', 'CRC'];
+  const familyOrder = [
+    'MD',
+    'SHA-1',
+    'SHA-2',
+    'SHA-3',
+    'RIPEMD',
+    'BLAKE',
+    'CRC',
+    'Checksum',
+    'XXHash',
+    'Chinese National Standard',
+    'Cipher-Based',
+  ];
 
   for (const family of familyOrder) {
     families.set(family, []);

@@ -36,27 +36,27 @@ export default function HashOutput({
   };
 
   return (
-    <div className="flex h-full flex-col space-y-2">
+    <div className="flex flex-col space-y-1.5">
       <div className="flex shrink-0 items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400">
           {algorithmName} Hash Output
         </h2>
-        <span className="text-xs text-gray-500 font-mono">{digestSize} bits</span>
+        <span className="text-[11px] text-gray-500 font-mono">{digestSize} bits</span>
       </div>
       <div
-        className={`group relative flex-1 min-h-[88px] flex flex-col justify-center rounded-lg border px-4 py-3 font-mono text-sm transition-all ${
+        className={`group relative h-11 flex items-center justify-between rounded-lg border px-3.5 font-mono text-xs sm:text-sm transition-all ${
           isComplete
             ? 'border-green-500/40 bg-green-500/10 text-green-300'
-            : 'border-gray-600 bg-gray-800/50 text-gray-400'
+            : 'border-gray-700 bg-gray-800/80 text-gray-400'
         }`}
       >
-        <div className="break-all leading-relaxed font-mono select-all">
+        <div className="truncate font-mono select-all pr-14">
           {digest ? formatHexGroups(digest) : 'Waiting for computation...'}
         </div>
         {digest && (
           <button
             onClick={handleCopy}
-            className="absolute right-2.5 top-2.5 rounded-md bg-gray-700/90 px-2.5 py-1 text-xs text-gray-200 opacity-0 transition-opacity hover:bg-gray-600 group-hover:opacity-100 border border-gray-600 shadow-sm"
+            className="absolute right-2 top-2 bottom-2 my-auto flex items-center rounded bg-gray-700/90 px-2.5 text-xs text-gray-200 opacity-90 transition-all hover:opacity-100 hover:bg-gray-600 border border-gray-600 shadow-sm"
           >
             {copied ? '✓ Copied' : 'Copy'}
           </button>

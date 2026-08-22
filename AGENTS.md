@@ -5,14 +5,14 @@
 
 ---
 
-## 1. Architecture Overview
+## 1. Architecture & Category Taxonomy
 
-CryptoScope is structured as an extensible **Algorithm Plugin System** paired with specialized **Hardware Telemetry Visualizers**.
+CryptoScope is structured as an extensible **Algorithm & Tool Plugin System** paired with specialized **Hardware Telemetry Visualizers**.
 
 ```
-Algorithm Plugin (e.g. src/algorithms/md5/index.ts)
+Algorithm/Tool Plugin (e.g. src/algorithms/md5/index.ts, src/algorithms/tools/pbkdf2/index.ts)
   │
-  ├── Computes digest & generates ComputationStep[]
+  ├── Computes digest/keys & generates ComputationStep[]
   │
   ▼
 Central Registry (src/algorithms/registry.ts)
@@ -27,13 +27,35 @@ Playback Engine (src/hooks/useHashEngine.ts)
   ▼
 Visualization Router (src/components/StepVisualizer.tsx)
   │
-  ├── 'round-computation' ──▶ RoundComputationView.tsx (3-bus logic analyzer: MD, SHA-1, SHA-2, RIPEMD, SM3, XXH)
-  ├── 'state-matrix'      ──▶ StateMatrixView.tsx (5×5 Keccak sponge matrix & 8×8 Whirlpool cipher matrix)
-  ├── 'mixing-function'   ──▶ MixingFunctionView.tsx (4×4 ARX mixing matrix: BLAKE2, BLAKE3)
-  ├── 'xor-table'         ──▶ XorTableView.tsx (CRC-16, CRC32, Adler-32 polynomial/modulo pipeline)
-  ├── 'binary-transform'  ──▶ BinaryTransformView.tsx (Padding & byte inspection)
-  └── 'final-digest'      ──▶ FinalDigestView.tsx (Output assembly)
+  ├── 'round-computation'   ──▶ RoundComputationView.tsx (3-bus logic analyzer: MD, SHA-1, SHA-2, RIPEMD, SM3, XXH)
+  ├── 'state-matrix'        ──▶ StateMatrixView.tsx (5×5 Keccak sponge matrix & 8×8 Whirlpool cipher matrix)
+  ├── 'aes-state-matrix'    ──▶ AesStateMatrixView.tsx (4×4 AES transformation matrix & round keys)
+  ├── 'feistel-ladder'      ──▶ FeistelLadderView.tsx (2-branch Feistel ladder: DES, 3DES)
+  ├── 'asymmetric-modexp'   ──▶ AsymmetricModExpView.tsx (BigInt ModExp & CRT decomposition: RSA)
+  ├── 'ecc-point'           ──▶ EccPointView.tsx (Elliptic Curve point addition & doubling: ECDSA)
+  ├── 'key-exchange'        ──▶ KeyExchangeView.tsx (2-party key agreement swimlane: DH, ECDH)
+  ├── 'lattice-polynomial'  ──▶ LatticePolynomialView.tsx (PQC spectrum & NTT butterflies: ML-KEM, ML-DSA)
+  ├── 'mixing-function'     ──▶ MixingFunctionView.tsx (4×4 ARX mixing matrix: BLAKE2, BLAKE3, ChaCha20)
+  ├── 'xor-table'           ──▶ XorTableView.tsx (CRC-16, CRC32, Adler-32 polynomial/modulo pipeline)
+  ├── 'binary-transform'    ──▶ BinaryTransformView.tsx (Padding, bit-grouping, Base58, Punycode, Morse, JWT, KDF)
+  └── 'final-digest'        ──▶ FinalDigestView.tsx (Output assembly)
 ```
+
+### 1.1 Category Classification Taxonomy
+
+The system organizes all algorithms and utilities into 6 top-level categories:
+
+1. **Hash Functions (`hash`)**: Standalone cryptographic and non-cryptographic hash functions (MD, SHA-1, SHA-2, SHA-3, Keccak, RIPEMD, BLAKE, CRC, Checksums, XXHash, SM3, Whirlpool).
+2. **Symmetric Ciphers (`symmetric`)**: Standalone symmetric block and stream ciphers (AES-128/192/256 ECB/CBC/CTR/GCM, DES, 3DES, ChaCha20, ChaCha20-Poly1305).
+3. **Asymmetric Cryptography (`asymmetric`)**: Standalone asymmetric public-key primitives and key exchanges (RSA-2048, RSA-Pedagogical, ECDSA secp256k1/P-256, Diffie-Hellman MODP/ECDH).
+4. **Post-Quantum Cryptography (`pqc`)**: Standalone lattice-based post-quantum standards (ML-KEM-512/768/1024, ML-DSA-44/65/87).
+5. **Encoding Schemes (`encoding`)**: Standalone radix, character, and historical encoding/decoding codecs (Base64, Base64URL, Base32, Base16, Base58, Base85, Base36, URL, UTF-8, UTF-16, Punycode, Quoted-Printable, Morse, JWT).
+6. **Tools (`tools`)**: Composite cryptographic pipelines, utilities, generators, format inspectors, and entropy analyzers that chain multiple primitives together or provide interactive tooling:
+   - **Key Derivation Functions (KDF)**: Iterated and memory-hard KDFs (PBKDF2, Scrypt, Argon2id).
+   - **Wallet / Mnemonic Generation**: Composite wallet key generators (BIP-39 mnemonic phrase & seed derivation).
+   - **Future Tools Sub-Families**: Entropy & CSPRNG visualizers, Format & Parsing tools (ASN.1, DER, PEM, X.509, JWK), Compression schemes (Huffman, LZ77, Deflate, Snappy).
+
+**Classification Rule**: Standalone mathematical primitives operating on uniform input blocks belong to their respective dedicated category (`hash`, `symmetric`, `asymmetric`, `pqc`, `encoding`). Composite pipelines (chaining multiple primitives), format parsers, interactive generators, and utility analyzers belong under `tools`.
 
 ---
 

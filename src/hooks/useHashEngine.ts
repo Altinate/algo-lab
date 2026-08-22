@@ -26,6 +26,7 @@ export interface HashEngineState {
   algorithm: AlgorithmPlugin | undefined;
   algorithms: AlgorithmPlugin[];
   algorithmsByFamily: Map<string, AlgorithmPlugin[]>;
+  algorithmsByCategory: Map<AlgorithmCategory, AlgorithmPlugin[]>;
   steps: ComputationStep[];
   digest: string;
 }
@@ -45,6 +46,14 @@ export function useHashEngine(): HashEngineState {
   const algorithm = useMemo(() => getAlgorithm(algorithmName), [algorithmName]);
   const algorithms = useMemo(() => listAlgorithms(category), [category]);
   const algorithmsByFamily = useMemo(() => getAlgorithmsByFamily(category), [category]);
+  const algorithmsByCategory = useMemo(() => {
+    const map = new Map<AlgorithmCategory, AlgorithmPlugin[]>();
+    const categories: AlgorithmCategory[] = ['hash', 'symmetric', 'asymmetric', 'pqc', 'encoding', 'tools'];
+    for (const cat of categories) {
+      map.set(cat, listAlgorithms(cat));
+    }
+    return map;
+  }, []);
 
   const isXOF = Boolean(algorithm?.info.isXOF || algorithmName.startsWith('SHAKE'));
 
@@ -83,6 +92,9 @@ export function useHashEngine(): HashEngineState {
     } else if (cat === 'encoding') {
       setAlgorithmName('Base64 (Encode)');
       setInput('Hello, World!');
+    } else if (cat === 'tools') {
+      setAlgorithmName('PBKDF2 (HMAC-SHA256)');
+      setInput('password');
     }
   }, []);
 
@@ -124,6 +136,7 @@ export function useHashEngine(): HashEngineState {
     algorithm,
     algorithms,
     algorithmsByFamily,
+    algorithmsByCategory,
     steps: result?.steps ?? [],
     digest: result?.digest ?? '',
   };

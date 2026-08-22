@@ -261,6 +261,9 @@ describe('Algorithm Registry', () => {
     expect(encFamilies.has('Text/Character Encoding')).toBe(true);
     expect(encFamilies.has('Signal/Historical Encoding')).toBe(true);
     expect(encFamilies.has('Structured Token')).toBe(true);
+
+    const toolsFamilies = getAlgorithmsByFamily('tools');
+    expect(toolsFamilies instanceof Map).toBe(true);
   });
 
   it('computes hash/cipher and steps for all registered algorithms', () => {

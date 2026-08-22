@@ -142,7 +142,19 @@ export default function App() {
               }`}
             >
               <span>🔤</span>
-              <span>ENCODING (28)</span>
+              <span>ENCODING ({engine.algorithmsByCategory?.get('encoding')?.length ?? 28})</span>
+            </button>
+
+            <button
+              onClick={() => engine.setCategory('tools')}
+              className={`rounded-[2px] px-2 py-0.5 text-[9px] font-bold uppercase transition-all flex items-center gap-1 ${
+                engine.category === 'tools'
+                  ? 'bg-[#1c1424] text-[#c084fc] border border-[#c084fc]/60 shadow-[0_0_8px_rgba(192,132,252,0.15)]'
+                  : 'bg-[#0e131b] text-[#64748b] hover:text-[#cbd5e1] border border-[#1f2937]'
+              }`}
+            >
+              <span>🛠</span>
+              <span>TOOLS ({engine.algorithmsByCategory?.get('tools')?.length ?? 0})</span>
             </button>
           </div>
         </div>
@@ -152,11 +164,11 @@ export default function App() {
           {engine.algorithm && (
             <div className="flex items-center gap-1.5 rounded-[2px] bg-[#0e131b] px-2 py-0.5 border border-[#1f2937] text-[11px] tabular-nums">
               <span className="text-[#64748b] hidden sm:inline text-[9px] font-medium">TARGET:</span>
-              <span className={`font-semibold ${engine.category === 'symmetric' ? 'text-[#34d399]' : engine.category === 'encoding' ? 'text-[#e5a93b]' : 'text-[#38bdf8]'}`}>
+              <span className={`font-semibold ${engine.category === 'symmetric' ? 'text-[#34d399]' : engine.category === 'encoding' ? 'text-[#e5a93b]' : engine.category === 'tools' ? 'text-[#c084fc]' : 'text-[#38bdf8]'}`}>
                 {engine.algorithm.info.name}
               </span>
               <span className="text-[9px] text-[#64748b]">
-                [{engine.algorithm.info.category === 'symmetric' ? `${engine.algorithm.info.keySize || engine.algorithm.info.digestSize}b Key` : engine.algorithm.info.category === 'encoding' ? 'Codec' : `${engine.algorithm.info.digestSize}b`}]
+                [{engine.algorithm.info.category === 'symmetric' ? `${engine.algorithm.info.keySize || engine.algorithm.info.digestSize}b Key` : engine.algorithm.info.category === 'encoding' || engine.algorithm.info.category === 'tools' ? 'Codec' : `${engine.algorithm.info.digestSize}b`}]
               </span>
             </div>
           )}
@@ -184,7 +196,7 @@ export default function App() {
             <div className="space-y-3.5 min-w-[220px]">
               <div className="flex items-center justify-between pb-1 border-b border-[#1f2937]">
                 <span className="text-[9px] font-medium uppercase tracking-wider text-[#64748b]">
-                  {engine.category === 'symmetric' ? 'CIPHER NAVIGATOR' : engine.category === 'encoding' ? 'ENCODING NAVIGATOR' : 'HASH NAVIGATOR'}
+                  {engine.category === 'symmetric' ? 'CIPHER NAVIGATOR' : engine.category === 'encoding' ? 'ENCODING NAVIGATOR' : engine.category === 'tools' ? 'TOOLS NAVIGATOR' : 'HASH NAVIGATOR'}
                 </span>
                 <button
                   onClick={toggleSidebar}

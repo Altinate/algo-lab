@@ -218,6 +218,14 @@ export function getAlgorithmsByFamily(category: AlgorithmCategory = 'hash'): Map
     'Structured Token',
   ];
 
+  const toolsFamilyOrder = [
+    'Key Derivation Functions (KDF)',
+    'Wallet / Mnemonic Generation',
+    'Entropy & CSPRNG Tools',
+    'Format & Parsing Tools',
+    'Data Compression',
+  ];
+
   const familyOrder =
     category === 'symmetric'
       ? symmetricFamilyOrder
@@ -227,6 +235,8 @@ export function getAlgorithmsByFamily(category: AlgorithmCategory = 'hash'): Map
       ? pqcFamilyOrder
       : category === 'encoding'
       ? encodingFamilyOrder
+      : category === 'tools'
+      ? toolsFamilyOrder
       : hashFamilyOrder;
 
   for (const family of familyOrder) {

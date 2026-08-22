@@ -25,9 +25,15 @@ This tool turns abstract cryptographic specifications (NIST FIPS 180-4, NIST FIP
 
 ---
 
-## ✨ Supported Algorithms (68 Algorithms across 18 Families)
+## ✨ Supported Categories & Algorithms (129 Algorithms across 6 Top-Level Categories)
 
-### ⌗ Hash Functions (34 Algorithms across 11 Families)
+CryptoScope is organized into 6 top-level categories:
+1. **Hash Functions (34 Algorithms)**: MD, SHA-1, SHA-2, SHA-3, Keccak, RIPEMD, BLAKE, CRC, Checksums, XXHash, SM3, Whirlpool.
+2. **Symmetric Ciphers (34 Algorithms)**: AES-128/192/256 (ECB, CBC, CTR, GCM), DES, 3DES, ChaCha20, ChaCha20-Poly1305.
+3. **Asymmetric Cryptography (15 Algorithms)**: RSA-2048 & RSA-Pedagogical (Encrypt/Decrypt/Sign/Verify), ECDSA (secp256k1, NIST P-256 Sign/Verify), Diffie-Hellman Key Exchange (DH-MODP-2048, ECDH-secp256k1, ECDH-P256).
+4. **Post-Quantum Cryptography (18 Algorithms)**: NIST FIPS 203 ML-KEM-512/768/1024 (KeyGen, Encapsulate, Decapsulate) & NIST FIPS 204 ML-DSA-44/65/87 (KeyGen, Sign, Verify).
+5. **Encoding Schemes (28 Algorithms)**: Base64, Base64URL, Base32, Base16, Base58, Base85 / ASCII85, Base36, URL Percent-Encoding, UTF-8, UTF-16, Punycode, Quoted-Printable, Morse Code, and JWT.
+6. **Tools (Composite Pipelines & Utilities)**: Key Derivation Functions (PBKDF2, Scrypt, Argon2id), Wallet / Mnemonic Generation (BIP-39), Entropy & Format tools.
 - **Legacy MD Family** (RFC 1319, RFC 1320, RFC 1321):
   - `MD2` (128-bit checksum byte substitution & 18-round permutation)
   - `MD4` (128-bit 3-round ARX compression)

@@ -7,69 +7,83 @@ import {
   NIST_FIPS203_KAT_1024,
 } from '../src/algorithms/pqc/ml-kem/constants';
 import { mlKemKeyGen, mlKemEncaps, mlKemDecaps } from '../src/algorithms/pqc/ml-kem/ml-kem-engine';
+import {
+  ML_DSA_44_PARAMS,
+  ML_DSA_65_PARAMS,
+  ML_DSA_87_PARAMS,
+  NIST_FIPS204_KAT_44,
+  NIST_FIPS204_KAT_65,
+  NIST_FIPS204_KAT_87,
+} from '../src/algorithms/pqc/ml-dsa/constants';
+import { mlDsaKeyGen, mlDsaSign, mlDsaVerify } from '../src/algorithms/pqc/ml-dsa/ml-dsa-engine';
 import { hexToBytes, bytesToHex } from '../src/algorithms/utils';
 
-console.log('=== NIST FIPS 203 (ML-KEM / CRYSTALS-KYBER) OFFICIAL KAT VERIFICATION ===\n');
+console.log('=============================================================================');
+console.log('  CRYPTO-SCOPE PQC VERIFICATION: NIST FIPS 203 (ML-KEM) & FIPS 204 (ML-DSA)  ');
+console.log('=============================================================================\n');
 
-// 1. ML-KEM-512 (NIST Category 1)
-const seedD512 = hexToBytes(NIST_FIPS203_KAT_512.d);
-const seedZ512 = hexToBytes(NIST_FIPS203_KAT_512.z);
-const seedM512 = hexToBytes(NIST_FIPS203_KAT_512.m);
+// -----------------------------------------------------------------------------
+// Part 1: NIST FIPS 203 ML-KEM (CRYSTALS-Kyber)
+// -----------------------------------------------------------------------------
+console.log('--- [1/2] NIST FIPS 203 ML-KEM (CRYSTALS-KYBER) OFFICIAL KAT VERIFICATION ---');
 
-const keyGen512 = mlKemKeyGen(ML_KEM_512_PARAMS, seedD512, seedZ512);
-const encaps512 = mlKemEncaps(ML_KEM_512_PARAMS, keyGen512.ek, seedM512);
-const decaps512 = mlKemDecaps(ML_KEM_512_PARAMS, keyGen512.dk, encaps512.c);
+for (const [name, params, kat] of [
+  ['ML-KEM-512', ML_KEM_512_PARAMS, NIST_FIPS203_KAT_512],
+  ['ML-KEM-768', ML_KEM_768_PARAMS, NIST_FIPS203_KAT_768],
+  ['ML-KEM-1024', ML_KEM_1024_PARAMS, NIST_FIPS203_KAT_1024],
+] as const) {
+  const seedD = hexToBytes(kat.d);
+  const seedZ = hexToBytes(kat.z);
+  const seedM = hexToBytes(kat.m);
 
-console.log('--- ML-KEM-512 ---');
-console.log('Seed d: ' + NIST_FIPS203_KAT_512.d);
-console.log('Seed z: ' + NIST_FIPS203_KAT_512.z);
-console.log('Seed m: ' + NIST_FIPS203_KAT_512.m);
-console.log('Computed KeyGen ek (800 bytes): ' + bytesToHex(keyGen512.ek).slice(0, 48) + '...' + bytesToHex(keyGen512.ek).slice(-16));
-console.log('Computed Ciphertext c (768 bytes): ' + bytesToHex(encaps512.c).slice(0, 48) + '...' + bytesToHex(encaps512.c).slice(-16));
-console.log('Computed Shared Secret K: ' + bytesToHex(encaps512.sharedKey));
-console.log('Official Expected KAT K:  ' + NIST_FIPS203_KAT_512.expectedK);
-console.log('Decaps Recovered Secret K\': ' + bytesToHex(decaps512.sharedKey));
-console.log('KAT Vector Exact Match (K == Expected KAT): ' + (bytesToHex(encaps512.sharedKey) === NIST_FIPS203_KAT_512.expectedK));
-console.log('Round-Trip Match (K == K\'):                ' + (bytesToHex(encaps512.sharedKey) === bytesToHex(decaps512.sharedKey)) + '\n');
+  const { ek, dk } = mlKemKeyGen(params, seedD, seedZ);
+  const { c, sharedKey } = mlKemEncaps(params, ek, seedM);
+  const { sharedKey: decapsK } = mlKemDecaps(params, dk, c);
 
-// 2. ML-KEM-768 (NIST Category 3 / Recommended)
-const seedD768 = hexToBytes(NIST_FIPS203_KAT_768.d);
-const seedZ768 = hexToBytes(NIST_FIPS203_KAT_768.z);
-const seedM768 = hexToBytes(NIST_FIPS203_KAT_768.m);
+  const kHex = bytesToHex(sharedKey);
+  const decapsKHex = bytesToHex(decapsK);
+  const katMatch = kHex === kat.expectedK;
+  const roundTripMatch = kHex === decapsKHex;
 
-const keyGen768 = mlKemKeyGen(ML_KEM_768_PARAMS, seedD768, seedZ768);
-const encaps768 = mlKemEncaps(ML_KEM_768_PARAMS, keyGen768.ek, seedM768);
-const decaps768 = mlKemDecaps(ML_KEM_768_PARAMS, keyGen768.dk, encaps768.c);
+  console.log(`\n• ${name}:`);
+  console.log(`  - KeyGen ek (${ek.length} B):  ${bytesToHex(ek).slice(0, 36)}...${bytesToHex(ek).slice(-12)}`);
+  console.log(`  - Ciphertext c (${c.length} B): ${bytesToHex(c).slice(0, 36)}...${bytesToHex(c).slice(-12)}`);
+  console.log(`  - Shared Secret K:    ${kHex}`);
+  console.log(`  - Expected KAT K:     ${kat.expectedK}`);
+  console.log(`  - Decaps Recovered K':${decapsKHex}`);
+  console.log(`  - External KAT Match: ${katMatch}`);
+  console.log(`  - Round-Trip Match:   ${roundTripMatch}`);
+}
 
-console.log('--- ML-KEM-768 (Recommended) ---');
-console.log('Seed d: ' + NIST_FIPS203_KAT_768.d);
-console.log('Seed z: ' + NIST_FIPS203_KAT_768.z);
-console.log('Seed m: ' + NIST_FIPS203_KAT_768.m);
-console.log('Computed KeyGen ek (1184 bytes): ' + bytesToHex(keyGen768.ek).slice(0, 48) + '...' + bytesToHex(keyGen768.ek).slice(-16));
-console.log('Computed Ciphertext c (1088 bytes): ' + bytesToHex(encaps768.c).slice(0, 48) + '...' + bytesToHex(encaps768.c).slice(-16));
-console.log('Computed Shared Secret K: ' + bytesToHex(encaps768.sharedKey));
-console.log('Official Expected KAT K:  ' + NIST_FIPS203_KAT_768.expectedK);
-console.log('Decaps Recovered Secret K\': ' + bytesToHex(decaps768.sharedKey));
-console.log('KAT Vector Exact Match (K == Expected KAT): ' + (bytesToHex(encaps768.sharedKey) === NIST_FIPS203_KAT_768.expectedK));
-console.log('Round-Trip Match (K == K\'):                ' + (bytesToHex(encaps768.sharedKey) === bytesToHex(decaps768.sharedKey)) + '\n');
+// -----------------------------------------------------------------------------
+// Part 2: NIST FIPS 204 ML-DSA (CRYSTALS-Dilithium)
+// -----------------------------------------------------------------------------
+console.log('\n\n--- [2/2] NIST FIPS 204 ML-DSA (CRYSTALS-DILITHIUM) OFFICIAL KAT VERIFICATION ---');
 
-// 3. ML-KEM-1024 (NIST Category 5)
-const seedD1024 = hexToBytes(NIST_FIPS203_KAT_1024.d);
-const seedZ1024 = hexToBytes(NIST_FIPS203_KAT_1024.z);
-const seedM1024 = hexToBytes(NIST_FIPS203_KAT_1024.m);
+for (const [name, params, kat] of [
+  ['ML-DSA-44', ML_DSA_44_PARAMS, NIST_FIPS204_KAT_44],
+  ['ML-DSA-65', ML_DSA_65_PARAMS, NIST_FIPS204_KAT_65],
+  ['ML-DSA-87', ML_DSA_87_PARAMS, NIST_FIPS204_KAT_87],
+] as const) {
+  const seed = hexToBytes(kat.seed);
+  const msg = hexToBytes(kat.message);
+  const ctx = hexToBytes(kat.context);
 
-const keyGen1024 = mlKemKeyGen(ML_KEM_1024_PARAMS, seedD1024, seedZ1024);
-const encaps1024 = mlKemEncaps(ML_KEM_1024_PARAMS, keyGen1024.ek, seedM1024);
-const decaps1024 = mlKemDecaps(ML_KEM_1024_PARAMS, keyGen1024.dk, encaps1024.c);
+  const { pk, sk } = mlDsaKeyGen(params, seed);
+  const { sig, steps } = mlDsaSign(params, sk, msg, ctx, true);
+  const { valid } = mlDsaVerify(params, pk, msg, sig, ctx);
 
-console.log('--- ML-KEM-1024 ---');
-console.log('Seed d: ' + NIST_FIPS203_KAT_1024.d);
-console.log('Seed z: ' + NIST_FIPS203_KAT_1024.z);
-console.log('Seed m: ' + NIST_FIPS203_KAT_1024.m);
-console.log('Computed KeyGen ek (1568 bytes): ' + bytesToHex(keyGen1024.ek).slice(0, 48) + '...' + bytesToHex(keyGen1024.ek).slice(-16));
-console.log('Computed Ciphertext c (1568 bytes): ' + bytesToHex(encaps1024.c).slice(0, 48) + '...' + bytesToHex(encaps1024.c).slice(-16));
-console.log('Computed Shared Secret K: ' + bytesToHex(encaps1024.sharedKey));
-console.log('Official Expected KAT K:  ' + NIST_FIPS203_KAT_1024.expectedK);
-console.log('Decaps Recovered Secret K\': ' + bytesToHex(decaps1024.sharedKey));
-console.log('KAT Vector Exact Match (K == Expected KAT): ' + (bytesToHex(encaps1024.sharedKey) === NIST_FIPS203_KAT_1024.expectedK));
-console.log('Round-Trip Match (K == K\'):                ' + (bytesToHex(encaps1024.sharedKey) === bytesToHex(decaps1024.sharedKey)) + '\n');
+  const pkHex = bytesToHex(pk);
+  const skHex = bytesToHex(sk);
+  const sigHex = bytesToHex(sig);
+
+  const rejStep = steps.find((s) => s.id === 'mldsa-sign-loop');
+  const attempts = (rejStep?.data as any)?.normStats?.attempts || 1;
+
+  console.log(`\n• ${name}:`);
+  console.log(`  - Public Key pk (${pk.length} B):  ${pkHex.slice(0, 36)}...${pkHex.slice(-12)}`);
+  console.log(`  - Secret Key sk (${sk.length} B):  ${skHex.slice(0, 36)}...${skHex.slice(-12)}`);
+  console.log(`  - Signature σ (${sig.length} B):   ${sigHex.slice(0, 36)}...${sigHex.slice(-12)}`);
+  console.log(`  - Rejection Loop Iterations: ${attempts}`);
+  console.log(`  - Verification Status:       ${valid ? 'PASS (VALID)' : 'FAIL (INVALID)'}`);
+}

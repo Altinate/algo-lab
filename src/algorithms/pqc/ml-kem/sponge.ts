@@ -146,11 +146,21 @@ export function shake256(input: Uint8Array, outLen: number): Uint8Array {
   return sponge.squeeze(outLen);
 }
 
-/** SHAKE128: XOF Stream */
-export function shake128Xof(seed: Uint8Array, i: number, j: number): KeccakSponge {
+/** SHAKE256: XOF Stream */
+export function shake256Xof(input: Uint8Array): KeccakSponge {
+  const sponge = new KeccakSponge(1088, 0x1f);
+  sponge.absorb(input);
+  sponge.finalize();
+  return sponge;
+}
+
+/** SHAKE128: XOF Stream with (seed, i, j) */
+export function shake128Xof(seed: Uint8Array, i?: number, j?: number): KeccakSponge {
   const sponge = new KeccakSponge(1344, 0x1f);
   sponge.absorb(seed);
-  sponge.absorb(new Uint8Array([i, j]));
+  if (i !== undefined && j !== undefined) {
+    sponge.absorb(new Uint8Array([i, j]));
+  }
   sponge.finalize();
   return sponge;
 }

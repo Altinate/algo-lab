@@ -130,7 +130,7 @@ export default function App() {
               }`}
             >
               <span>⚛</span>
-              <span>POST-QUANTUM (5)</span>
+              <span>POST-QUANTUM (18)</span>
             </button>
           </div>
         </div>

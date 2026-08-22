@@ -71,6 +71,7 @@ import { dhPlugins } from './asymmetric/dh';
 
 // Post-Quantum Cryptography (ML-KEM, ML-DSA)
 import { mlKemPlugins } from './pqc/ml-kem';
+import { mlDsaPlugins } from './pqc/ml-dsa';
 
 import type { AlgorithmCategory } from './types';
 
@@ -151,6 +152,7 @@ dhPlugins.forEach(register);
 
 // Register all Post-Quantum Cryptography Plugins
 mlKemPlugins.forEach(register);
+mlDsaPlugins.forEach(register);
 
 /** Get an algorithm plugin by name */
 export function getAlgorithm(name: string): AlgorithmPlugin | undefined {

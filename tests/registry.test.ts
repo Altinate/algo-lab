@@ -143,9 +143,9 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('ECDH-P256');
   });
 
-  it('registers all 9 built-in post-quantum algorithms', () => {
+  it('registers all 18 built-in post-quantum algorithms', () => {
     const pqcAlgorithms = listAlgorithms('pqc');
-    expect(pqcAlgorithms.length).toBe(9);
+    expect(pqcAlgorithms.length).toBe(18);
     const names = pqcAlgorithms.map((a) => a.info.name);
 
     // ML-KEM
@@ -158,11 +158,22 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('ML-KEM-1024 (KeyGen)');
     expect(names).toContain('ML-KEM-1024 (Encapsulate)');
     expect(names).toContain('ML-KEM-1024 (Decapsulate)');
+
+    // ML-DSA
+    expect(names).toContain('ML-DSA-44 (KeyGen)');
+    expect(names).toContain('ML-DSA-44 (Sign)');
+    expect(names).toContain('ML-DSA-44 (Verify)');
+    expect(names).toContain('ML-DSA-65 (KeyGen)');
+    expect(names).toContain('ML-DSA-65 (Sign)');
+    expect(names).toContain('ML-DSA-65 (Verify)');
+    expect(names).toContain('ML-DSA-87 (KeyGen)');
+    expect(names).toContain('ML-DSA-87 (Sign)');
+    expect(names).toContain('ML-DSA-87 (Verify)');
   });
 
   it('can look up every algorithm by name across all categories', () => {
     const algorithms = listAlgorithms();
-    expect(algorithms.length).toBe(92);
+    expect(algorithms.length).toBe(101);
     for (const algo of algorithms) {
       const retrieved = getAlgorithm(algo.info.name);
       expect(retrieved).toBeDefined();
@@ -200,6 +211,7 @@ describe('Algorithm Registry', () => {
 
     const pqcFamilies = getAlgorithmsByFamily('pqc');
     expect(pqcFamilies.has('ML-KEM (Kyber)')).toBe(true);
+    expect(pqcFamilies.has('ML-DSA (Dilithium)')).toBe(true);
   });
 
   it('computes hash/cipher and steps for all registered algorithms', () => {

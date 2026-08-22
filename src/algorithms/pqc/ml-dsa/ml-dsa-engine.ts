@@ -232,6 +232,11 @@ export function mlDsaKeyGen(
   const sigma = seedHash.subarray(32, 96);
   const K = seedHash.subarray(96, 128);
 
+  const seedSpectrum = new Array<number>(256);
+  for (let i = 0; i < 256; i++) {
+    seedSpectrum[i] = (rho[i % 32] * 257 + sigma[i % 64] * 64) % ML_DSA_Q;
+  }
+
   steps.push({
     id: 'mldsa-keygen-seed',
     title: 'Seed Expansion (SHAKE256)',
@@ -244,60 +249,135 @@ export function mlDsaKeyGen(
       k: params.k,
       l: params.l,
       noiseEta: params.eta,
+      polynomialCoeffs: seedSpectrum,
+      polyLabel: 'Seed Hash Spectrum SHAKE256(ξ || k || l)',
     } as LatticePolynomialStepData,
   });
 
   const AHat = expandA(params, rho);
   const matrixSampleA = AHat.map((row) => row.map((poly) => poly[0]));
 
-  steps.push({
-    id: 'mldsa-keygen-expand-a',
-    title: 'Matrix Generation (ExpandA)',
-    phase: 'MATRIX GENERATION',
-    description: `Sampled ${params.k}×${params.l} polynomial matrix Â in NTT domain using uniform rejection sampling over SHAKE128(ρ || j || i).`,
-    visualizationType: 'lattice-polynomial',
-    data: {
-      stageName: 'ExpandA Sampling',
-      subTitle: `Matrix Â ∈ R_q^{${params.k}×${params.l}}`,
-      k: params.k,
-      l: params.l,
-      matrixSampleA,
-      polynomialCoeffs: AHat[0][0],
-    } as LatticePolynomialStepData,
-  });
+  for (let r = 0; r < params.k; r++) {
+    steps.push({
+      id: `mldsa-keygen-expand-a-${r}`,
+      title: `Matrix Generation Row ${r} (ExpandA)`,
+      phase: 'MATRIX GENERATION',
+      description: `Sampled row ${r} of ${params.k}×${params.l} polynomial matrix Â in NTT domain using uniform rejection sampling over SHAKE128(ρ || j || ${r}).`,
+      visualizationType: 'lattice-polynomial',
+      data: {
+        stageName: 'ExpandA Sampling',
+        subTitle: `Matrix Row Â[${r}, :] ∈ R_q^{1×${params.l}}`,
+        k: params.k,
+        l: params.l,
+        matrixSampleA,
+        polynomialCoeffs: AHat[r][0],
+        polyLabel: `Matrix Element Â[${r}, 0] (NTT domain)`,
+      } as LatticePolynomialStepData,
+    });
+  }
 
   const { s1, s2 } = expandS(params, sigma);
 
-  // Compute bounded noise histogram
-  const hist = new Array<number>(2 * params.eta + 1).fill(0);
+  // Compute bounded noise histogram for s1
+  const hist1 = new Array<number>(2 * params.eta + 1).fill(0);
   for (const poly of s1) {
     for (const coeff of poly) {
       let v = coeff;
       if (v > ML_DSA_Q / 2) v -= ML_DSA_Q;
-      hist[v + params.eta]++;
+      hist1[v + params.eta]++;
     }
   }
 
   steps.push({
-    id: 'mldsa-keygen-expand-s',
-    title: 'Secret Vectors Sampling (ExpandS)',
+    id: 'mldsa-keygen-expand-s1',
+    title: 'Secret Vector s₁ Sampling (ExpandS)',
     phase: 'SECRET SAMPLING',
-    description: `Sampled short secret vectors s₁ ∈ [-η, η]^${params.l} and s₂ ∈ [-η, η]^${params.k} with η=${params.eta}.`,
+    description: `Sampled short secret vector s₁ ∈ [-η, η]^${params.l} with η=${params.eta} from SHAKE256(σ || 0..${params.l - 1}).`,
     visualizationType: 'lattice-polynomial',
     data: {
-      stageName: 'Secret Key Sampling',
-      subTitle: `s₁ ∈ R_q^${params.l}, s₂ ∈ R_q^${params.k} (η=${params.eta})`,
+      stageName: 'Secret Key Sampling s₁',
+      subTitle: `s₁ ∈ R_q^${params.l} (η=${params.eta})`,
       k: params.k,
       l: params.l,
       noiseEta: params.eta,
-      noiseHistogram: hist,
+      noiseHistogram: hist1,
       polynomialCoeffs: s1[0],
+      polyLabel: `Secret Noise Polynomial s₁[0] (η=${params.eta})`,
     } as LatticePolynomialStepData,
   });
 
-  const s1Hat = s1.map((p) => ntt(p).transformed);
+  const hist2 = new Array<number>(2 * params.eta + 1).fill(0);
+  for (const poly of s2) {
+    for (const coeff of poly) {
+      let v = coeff;
+      if (v > ML_DSA_Q / 2) v -= ML_DSA_Q;
+      hist2[v + params.eta]++;
+    }
+  }
+
+  steps.push({
+    id: 'mldsa-keygen-expand-s2',
+    title: 'Secret Vector s₂ Sampling (ExpandS)',
+    phase: 'SECRET SAMPLING',
+    description: `Sampled short secret vector s₂ ∈ [-η, η]^${params.k} with η=${params.eta} from SHAKE256(σ || ${params.l}..${params.l + params.k - 1}).`,
+    visualizationType: 'lattice-polynomial',
+    data: {
+      stageName: 'Secret Key Sampling s₂',
+      subTitle: `s₂ ∈ R_q^${params.k} (η=${params.eta})`,
+      k: params.k,
+      l: params.l,
+      noiseEta: params.eta,
+      noiseHistogram: hist2,
+      polynomialCoeffs: s2[0],
+      polyLabel: `Secret Noise Polynomial s₂[0] (η=${params.eta})`,
+    } as LatticePolynomialStepData,
+  });
+
+  const s1NttResults = s1.map((p) => ntt(p));
+  const s1Hat = s1NttResults.map((r) => r.transformed);
+  const s1Stages = s1NttResults.map((r) => r.stages);
+
+  steps.push({
+    id: 'mldsa-keygen-ntt-s1',
+    title: 'Forward NTT Transform (s₁ → ŝ₁)',
+    phase: 'NTT ALGEBRA',
+    description: `Transformed secret vector s₁ to NTT domain ŝ₁ across 8 Cooley-Tukey butterfly stages modulo q=${ML_DSA_Q}.`,
+    visualizationType: 'lattice-polynomial',
+    data: {
+      stageName: 'NTT Transform s₁',
+      subTitle: `NTT Domain ŝ₁[0]`,
+      k: params.k,
+      l: params.l,
+      polynomialCoeffs: s1Hat[0],
+      polyLabel: 'NTT Secret Polynomial ŝ₁[0]',
+      nttStages: s1Stages[0].map((s) => ({
+        stage: s.stage,
+        subLength: s.len,
+        len: s.len,
+        butterfliesCount: s.butterfliesCount,
+        sampleValues: s.sampleValues,
+      })),
+    } as LatticePolynomialStepData,
+  });
+
   const As1Hat = matVecMulNTT(AHat, s1Hat);
   const As1 = As1Hat.map((p) => nttInv(p));
+
+  steps.push({
+    id: 'mldsa-keygen-as1',
+    title: 'Matrix-Vector Product & Inverse NTT (As₁ = NTT⁻¹(Â · ŝ₁))',
+    phase: 'NTT ALGEBRA',
+    description: `Computed matrix-vector dot product Â · ŝ₁ in NTT domain and mapped back via Gentleman-Sande NTT⁻¹.`,
+    visualizationType: 'lattice-polynomial',
+    data: {
+      stageName: 'Matrix Multiplication As₁',
+      subTitle: `As₁ ∈ R_q^${params.k}`,
+      k: params.k,
+      l: params.l,
+      polynomialCoeffs: As1[0],
+      polyLabel: 'Matrix Product Vector (As₁)[0]',
+    } as LatticePolynomialStepData,
+  });
 
   const t: number[][] = [];
   const t1: number[][] = [];
@@ -331,6 +411,7 @@ export function mlDsaKeyGen(
       k: params.k,
       l: params.l,
       polynomialCoeffs: t[0],
+      polyLabel: 'Combined Polynomial t[0] = (As₁ + s₂)[0]',
     } as LatticePolynomialStepData,
   });
 
@@ -349,6 +430,8 @@ export function mlDsaKeyGen(
       subTitle: `pk (${params.pkBytes}B), sk (${params.skBytes}B)`,
       k: params.k,
       l: params.l,
+      polynomialCoeffs: t1[0],
+      polyLabel: 'Public Key High-Bits Polynomial t₁[0]',
       sharedKeyHex: bytesToHex(pk),
     } as LatticePolynomialStepData,
   });
@@ -381,6 +464,27 @@ export function mlDsaSign(
   trMPrime.set(mPrime, 64);
   const mu = shake256(trMPrime, 64);
 
+  const muPoly = new Array<number>(256);
+  for (let i = 0; i < 256; i++) {
+    muPoly[i] = (mu[i % 64] * 1024 + tr[i % 64]) % ML_DSA_Q;
+  }
+
+  steps.push({
+    id: 'mldsa-sign-init',
+    title: 'Message Digest & Context Binding (μ = SHAKE256(tr ‖ M′))',
+    phase: 'INITIALIZATION',
+    description: `Computed message commitment μ = SHAKE256(tr || M') binding public key hash tr, context (${context.length}B), and message (${message.length}B).`,
+    visualizationType: 'lattice-polynomial',
+    data: {
+      stageName: 'Signing Digest Initialization',
+      subTitle: `Context length: ${context.length}B, Message: ${message.length}B`,
+      k: params.k,
+      l: params.l,
+      polynomialCoeffs: muPoly,
+      polyLabel: 'Message Commitment Digest μ',
+    } as LatticePolynomialStepData,
+  });
+
   const rnd = new Uint8Array(32);
   const kRndMu = new Uint8Array(32 + 32 + 64);
   kRndMu.set(K, 0);
@@ -388,23 +492,54 @@ export function mlDsaSign(
   kRndMu.set(mu, 64);
   const rhoPrime = shake256(kRndMu, 64);
 
+  const rhoPrimePoly = new Array<number>(256);
+  for (let i = 0; i < 256; i++) {
+    rhoPrimePoly[i] = (rhoPrime[i % 64] * 1024 + K[i % 32]) % ML_DSA_Q;
+  }
+
   steps.push({
-    id: 'mldsa-sign-init',
-    title: 'Message Digest & Mask Seed Derivation',
-    phase: 'INITIALIZATION',
-    description: `Computed message commitment μ = SHAKE256(tr || M') and mask seed ρ' = SHAKE256(K || rnd || μ).`,
+    id: 'mldsa-sign-mask-seed',
+    title: 'Mask Seed Derivation (ρ′ = SHAKE256(K ‖ rnd ‖ μ))',
+    phase: 'SEED EXPANSION',
+    description: `Generated 64-byte deterministic mask seed ρ' from signing key K and message commitment μ.`,
     visualizationType: 'lattice-polynomial',
     data: {
-      stageName: 'Signing Digest Initialization',
-      subTitle: `Context length: ${context.length}B, Message: ${message.length}B`,
+      stageName: 'Mask Seed Derivation',
+      subTitle: `ρ′ (${rhoPrime.length} bytes)`,
       k: params.k,
       l: params.l,
+      polynomialCoeffs: rhoPrimePoly,
+      polyLabel: 'Mask Generation Seed ρ′',
     } as LatticePolynomialStepData,
   });
 
-  const s1Hat = s1.map((p) => ntt(p).transformed);
+  const s1Ntt = s1.map((p) => ntt(p));
+  const s1Hat = s1Ntt.map((r) => r.transformed);
   const s2Hat = s2.map((p) => ntt(p).transformed);
   const t0Hat = t0.map((p) => ntt(p).transformed);
+
+  steps.push({
+    id: 'mldsa-sign-ntt-s',
+    title: 'Secret Key NTT Domain Transform (s₁, s₂, t₀ → ŝ₁, ŝ₂, t̂₀)',
+    phase: 'NTT ALGEBRA',
+    description: `Transformed secret vectors s₁, s₂, and t₀ to NTT domain across 8 Cooley-Tukey stages.`,
+    visualizationType: 'lattice-polynomial',
+    data: {
+      stageName: 'Secret Key NTT',
+      subTitle: `ŝ₁ ∈ R_q^${params.l}, ŝ₂ ∈ R_q^${params.k}`,
+      k: params.k,
+      l: params.l,
+      polynomialCoeffs: s1Hat[0],
+      polyLabel: 'NTT Secret Polynomial ŝ₁[0]',
+      nttStages: s1Ntt[0].stages.map((s) => ({
+        stage: s.stage,
+        subLength: s.len,
+        len: s.len,
+        butterfliesCount: s.butterfliesCount,
+        sampleValues: s.sampleValues,
+      })),
+    } as LatticePolynomialStepData,
+  });
 
   let kappa = 0;
   let attempts = 0;
@@ -414,7 +549,8 @@ export function mlDsaSign(
     const y = expandMask(params, rhoPrime, kappa);
     kappa += params.l;
 
-    const yHat = y.map((p) => ntt(p).transformed);
+    const yNtt = y.map((p) => ntt(p));
+    const yHat = yNtt.map((r) => r.transformed);
     const AyHat = matVecMulNTT(AHat, yHat);
     const w = AyHat.map((p) => nttInv(p));
 
@@ -480,6 +616,110 @@ export function mlDsaSign(
       continue;
     }
 
+    // Intermediate pedagogical steps for the accepted run:
+    steps.push({
+      id: 'mldsa-sign-expand-mask',
+      title: 'Mask Vector Sampling (ExpandMask → y)',
+      phase: 'SECRET SAMPLING',
+      description: `Sampled mask vector y ∈ [-γ₁ + 1, γ₁]^${params.l} with γ₁=2^${Math.round(Math.log2(params.gamma1))}.`,
+      visualizationType: 'lattice-polynomial',
+      data: {
+        stageName: 'Mask Vector Sampling',
+        subTitle: `y ∈ R_q^${params.l} (γ₁=${params.gamma1})`,
+        k: params.k,
+        l: params.l,
+        polynomialCoeffs: y[0],
+        polyLabel: 'Mask Vector Polynomial y[0]',
+      } as LatticePolynomialStepData,
+    });
+
+    steps.push({
+      id: 'mldsa-sign-ntt-y',
+      title: 'Forward NTT on Mask Vector (y → ŷ)',
+      phase: 'NTT ALGEBRA',
+      description: `Transformed mask vector y to NTT domain ŷ for fast matrix multiplication.`,
+      visualizationType: 'lattice-polynomial',
+      data: {
+        stageName: 'Mask Vector NTT',
+        subTitle: `ŷ ∈ R_q^${params.l}`,
+        k: params.k,
+        l: params.l,
+        polynomialCoeffs: yHat[0],
+        polyLabel: 'NTT Domain Mask ŷ[0]',
+        nttStages: yNtt[0].stages.map((s) => ({
+          stage: s.stage,
+          subLength: s.len,
+          len: s.len,
+          butterfliesCount: s.butterfliesCount,
+          sampleValues: s.sampleValues,
+        })),
+      } as LatticePolynomialStepData,
+    });
+
+    steps.push({
+      id: 'mldsa-sign-matvec-w',
+      title: 'Matrix Projection (w = NTT⁻¹(Â · ŷ))',
+      phase: 'NTT ALGEBRA',
+      description: `Computed projection vector w = Â · y in NTT domain and mapped back to standard domain.`,
+      visualizationType: 'lattice-polynomial',
+      data: {
+        stageName: 'Matrix Projection w',
+        subTitle: `w ∈ R_q^${params.k}`,
+        k: params.k,
+        l: params.l,
+        polynomialCoeffs: w[0],
+        polyLabel: 'Lattice Projection Vector w[0]',
+      } as LatticePolynomialStepData,
+    });
+
+    steps.push({
+      id: 'mldsa-sign-highbits-w1',
+      title: 'High-Bits Decomposition (w₁ = HighBits(w, 2γ₂))',
+      phase: 'ROUNDING',
+      description: `Extracted high bits w₁ = HighBits(w, 2γ₂) with γ₂=${params.gamma2}.`,
+      visualizationType: 'lattice-polynomial',
+      data: {
+        stageName: 'High-Bits Extraction',
+        subTitle: `w₁ ∈ R_q^${params.k}`,
+        k: params.k,
+        l: params.l,
+        polynomialCoeffs: w1[0],
+        polyLabel: 'High-Bits Polynomial w₁[0]',
+      } as LatticePolynomialStepData,
+    });
+
+    steps.push({
+      id: 'mldsa-sign-challenge-c',
+      title: 'Challenge Generation (c = SampleInBall(c̃, τ))',
+      phase: 'ROUNDING',
+      description: `Sampled sparse challenge polynomial c with τ=${params.tau} non-zero coefficients from challenge hash c̃ = SHAKE256(μ || w₁).`,
+      visualizationType: 'lattice-polynomial',
+      data: {
+        stageName: 'Challenge Sampling',
+        subTitle: `c ∈ R_q (τ=${params.tau} non-zeros in {-1, 1})`,
+        k: params.k,
+        l: params.l,
+        polynomialCoeffs: c,
+        polyLabel: 'Sparse Challenge Polynomial c',
+      } as LatticePolynomialStepData,
+    });
+
+    steps.push({
+      id: 'mldsa-sign-z-comp',
+      title: 'Signature Vector Computation (z = y + c · s₁ mod q)',
+      phase: 'NTT ALGEBRA',
+      description: `Computed masked signature vector z = y + c · s₁ using NTT polynomial multiplication.`,
+      visualizationType: 'lattice-polynomial',
+      data: {
+        stageName: 'Signature Vector z',
+        subTitle: `z ∈ R_q^${params.l}`,
+        k: params.k,
+        l: params.l,
+        polynomialCoeffs: z[0],
+        polyLabel: 'Masked Signature Polynomial z[0]',
+      } as LatticePolynomialStepData,
+    });
+
     const sig = sigEncode(params, cTilde, z, h);
 
     steps.push({
@@ -496,6 +736,7 @@ export function mlDsaSign(
         gamma1: params.gamma1,
         gamma2: params.gamma2,
         polynomialCoeffs: z[0],
+        polyLabel: 'Verified Signature Polynomial z[0]',
         normStats: {
           zNorm,
           zBound: params.gamma1 - params.beta,
@@ -513,7 +754,7 @@ export function mlDsaSign(
 
     steps.push({
       id: 'mldsa-sign-complete',
-      title: 'Signature Complete (σ)',
+      title: 'Signature Complete (σ = (c̃, z, h))',
       phase: 'COMPLETE',
       description: `Constructed ${params.sigBytes}-byte post-quantum digital signature σ = (c̃, z, h).`,
       visualizationType: 'lattice-polynomial',
@@ -522,6 +763,8 @@ export function mlDsaSign(
         subTitle: `Signature size: ${params.sigBytes} bytes`,
         k: params.k,
         l: params.l,
+        polynomialCoeffs: z[0],
+        polyLabel: 'Final Signature Vector z[0]',
         signatureHex: bytesToHex(sig),
       } as LatticePolynomialStepData,
     });
@@ -543,6 +786,23 @@ export function mlDsaVerify(
   const steps: ComputationStep[] = [];
   const { rho, t1 } = pkDecode(params, pkBytes);
   const { cTilde, z, h } = sigDecode(params, sigBytes);
+
+  steps.push({
+    id: 'mldsa-verify-parse',
+    title: 'Signature & Public Key Decoding',
+    phase: 'INITIALIZATION',
+    description: `Decoded signature σ = (c̃ [${cTilde.length}B], z [${z.length} polys], h [${h.length} rows]) and public key pk = (ρ [32B], t₁ [${t1.length} polys]).`,
+    visualizationType: 'lattice-polynomial',
+    data: {
+      stageName: 'Signature Decoding',
+      subTitle: `pk (${pkBytes.length}B), σ (${sigBytes.length}B)`,
+      k: params.k,
+      l: params.l,
+      polynomialCoeffs: z[0],
+      polyLabel: 'Decoded Signature Vector z[0]',
+      signatureHex: bytesToHex(sigBytes),
+    } as LatticePolynomialStepData,
+  });
 
   const zNorm = getZNorm(z);
   const zValid = zNorm < params.gamma1 - params.beta;
@@ -567,6 +827,7 @@ export function mlDsaVerify(
       k: params.k,
       l: params.l,
       polynomialCoeffs: z[0],
+      polyLabel: 'Signature Vector z[0] (Bounds Check)',
       normStats: {
         zNorm,
         zBound: params.gamma1 - params.beta,
@@ -595,11 +856,88 @@ export function mlDsaVerify(
   trMPrime.set(mPrime, 64);
   const mu = shake256(trMPrime, 64);
 
+  const muPoly = new Array<number>(256);
+  for (let i = 0; i < 256; i++) {
+    muPoly[i] = (mu[i % 64] * 1024 + tr[i % 64]) % ML_DSA_Q;
+  }
+
+  steps.push({
+    id: 'mldsa-verify-mu',
+    title: 'Message Commitment Digest (μ = SHAKE256(tr ‖ M′))',
+    phase: 'INITIALIZATION',
+    description: `Recomputed commitment μ = SHAKE256(H(pk) || context || message).`,
+    visualizationType: 'lattice-polynomial',
+    data: {
+      stageName: 'Message Commitment',
+      subTitle: `Context length: ${context.length}B, Message: ${message.length}B`,
+      k: params.k,
+      l: params.l,
+      polynomialCoeffs: muPoly,
+      polyLabel: 'Recomputed Message Commitment μ',
+    } as LatticePolynomialStepData,
+  });
+
+  steps.push({
+    id: 'mldsa-verify-expand-a',
+    title: 'Matrix Reconstruction from Public Seed (ExpandA(ρ))',
+    phase: 'MATRIX GENERATION',
+    description: `Reconstructed ${params.k}×${params.l} matrix Â in NTT domain from public seed ρ.`,
+    visualizationType: 'lattice-polynomial',
+    data: {
+      stageName: 'Matrix Reconstruction',
+      subTitle: `Matrix Â ∈ R_q^{${params.k}×${params.l}}`,
+      k: params.k,
+      l: params.l,
+      polynomialCoeffs: AHat[0][0],
+      polyLabel: 'Reconstructed Matrix Element Â[0, 0]',
+    } as LatticePolynomialStepData,
+  });
+
   const c = sampleInBall(cTilde, params.tau);
   const cHat = ntt(c).transformed;
 
-  const zHat = z.map((p) => ntt(p).transformed);
+  steps.push({
+    id: 'mldsa-verify-challenge',
+    title: 'Challenge Polynomial Reconstruction (c = SampleInBall(c̃, τ))',
+    phase: 'ROUNDING',
+    description: `Reconstructed challenge polynomial c with τ=${params.tau} non-zeros from commitment c̃.`,
+    visualizationType: 'lattice-polynomial',
+    data: {
+      stageName: 'Challenge Sampling',
+      subTitle: `c ∈ R_q (τ=${params.tau})`,
+      k: params.k,
+      l: params.l,
+      polynomialCoeffs: c,
+      polyLabel: 'Reconstructed Challenge Polynomial c',
+    } as LatticePolynomialStepData,
+  });
+
+  const zNtt = z.map((p) => ntt(p));
+  const zHat = zNtt.map((r) => r.transformed);
   const AzHat = matVecMulNTT(AHat, zHat);
+
+  steps.push({
+    id: 'mldsa-verify-ntt-z',
+    title: 'Forward NTT on Signature Vector (z → ẑ)',
+    phase: 'NTT ALGEBRA',
+    description: `Transformed signature vector z to NTT domain ẑ across 8 butterfly stages.`,
+    visualizationType: 'lattice-polynomial',
+    data: {
+      stageName: 'NTT Signature Vector',
+      subTitle: `ẑ ∈ R_q^${params.l}`,
+      k: params.k,
+      l: params.l,
+      polynomialCoeffs: zHat[0],
+      polyLabel: 'NTT Signature Polynomial ẑ[0]',
+      nttStages: zNtt[0].stages.map((s) => ({
+        stage: s.stage,
+        subLength: s.len,
+        len: s.len,
+        butterfliesCount: s.butterfliesCount,
+        sampleValues: s.sampleValues,
+      })),
+    } as LatticePolynomialStepData,
+  });
 
   const t1Shifted = t1.map((row) => row.map((coeff) => (coeff << ML_DSA_D) % ML_DSA_Q));
   const t1ShiftedHat = t1Shifted.map((row) => ntt(row).transformed);
@@ -609,10 +947,42 @@ export function mlDsaVerify(
   const wApproxHat = AzHat.map((row, i) => row.map((val, j) => (val - ct1Hat[i][j] + ML_DSA_Q) % ML_DSA_Q));
   const wApprox = wApproxHat.map((row) => nttInv(row));
 
+  steps.push({
+    id: 'mldsa-verify-w-approx',
+    title: 'High-Bits Approximation (w′ = NTT⁻¹(Â · ẑ − ĉ · t̂₁ · 2^d))',
+    phase: 'NTT ALGEBRA',
+    description: `Reconstructed projection w' ≈ Â·z - c·t₁·2^d in standard domain.`,
+    visualizationType: 'lattice-polynomial',
+    data: {
+      stageName: 'High-Bits Projection w′',
+      subTitle: `w′ ∈ R_q^${params.k}`,
+      k: params.k,
+      l: params.l,
+      polynomialCoeffs: wApprox[0],
+      polyLabel: 'Reconstructed Projection Polynomial w′[0]',
+    } as LatticePolynomialStepData,
+  });
+
   const w1Prime: number[][] = [];
   for (let i = 0; i < params.k; i++) {
     w1Prime.push(wApprox[i].map((coeff, j) => useHint(h[i][j], coeff, 2 * params.gamma2)));
   }
+
+  steps.push({
+    id: 'mldsa-verify-use-hint',
+    title: 'High-Bits Recovery via Hint Vector (w₁′ = UseHint(h, w′))',
+    phase: 'ROUNDING',
+    description: `Applied hint vector h to projection w' to recover exact high bits w₁'.`,
+    visualizationType: 'lattice-polynomial',
+    data: {
+      stageName: 'UseHint Recovery',
+      subTitle: `w₁′ ∈ R_q^${params.k}`,
+      k: params.k,
+      l: params.l,
+      polynomialCoeffs: w1Prime[0],
+      polyLabel: 'Recovered High-Bits Polynomial w₁′[0]',
+    } as LatticePolynomialStepData,
+  });
 
   const w1PrimePacked = packW1(params, w1Prime);
   const muW1 = new Uint8Array(64 + w1PrimePacked.length);
@@ -642,6 +1012,8 @@ export function mlDsaVerify(
       subTitle: matched ? 'SIGNATURE VALID' : 'SIGNATURE REJECTED',
       k: params.k,
       l: params.l,
+      polynomialCoeffs: w1Prime[0],
+      polyLabel: 'Verified High-Bits Polynomial w₁′[0]',
       verified: matched,
     } as LatticePolynomialStepData,
   });

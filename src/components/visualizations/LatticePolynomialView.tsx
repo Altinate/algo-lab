@@ -120,11 +120,68 @@ export default function LatticePolynomialView({ step }: LatticePolynomialViewPro
       {/* Module-level Flow Pipeline Bar */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-1.5 text-[8.5px]">
         {[
-          { label: '1. SEED EXPANSION', desc: isMlDsa ? 'SHAKE256(ξ, k, l)' : 'SHA3-512 (ρ, σ)', active: step.phase === 'SEED EXPANSION' || data.pipelineStage === 'KeyGen' },
-          { label: '2. LATTICE MATRIX', desc: isMlDsa ? 'ExpandA (SHAKE128)' : 'SampleNTT(Â)', active: step.phase === 'MATRIX GENERATION' },
-          { label: '3. NOISE / MASK', desc: isMlDsa ? 'ExpandS / ExpandMask' : 'CBD(η₁, η₂)', active: step.phase === 'SECRET SAMPLING' || histEntries.length > 0 },
-          { label: '4. NTT ALGEBRA', desc: isMlDsa ? 'Â·ŷ mod q' : 'Â·ŝ + ê mod q', active: !!data.nttStages || step.phase === 'ROUNDING' },
-          { label: isMlDsa ? '5. REJECTION / SIG' : '5. KEM DERIVATION', desc: isMlDsa ? '||z||_∞ bound check' : 'Shared Key (K)', active: !!data.normStats || !!data.sharedKeyHex || !!data.signatureHex },
+          {
+            label: '1. SEED EXPANSION',
+            desc: isMlDsa ? 'SHAKE256(ξ, k, l)' : 'SHA3-512 (ρ, σ)',
+            active:
+              step.phase === 'SEED EXPANSION' ||
+              step.phase === 'Lattice Setup' ||
+              step.phase === 'INITIALIZATION' ||
+              step.id === 'pqc-keygen-setup' ||
+              step.id === 'pqc-encaps-seed' ||
+              step.id === 'pqc-decaps-parse' ||
+              step.id === 'mldsa-keygen-seed' ||
+              step.id === 'mldsa-sign-init' ||
+              step.id === 'mldsa-verify-parse',
+          },
+          {
+            label: '2. LATTICE MATRIX',
+            desc: isMlDsa ? 'ExpandA (SHAKE128)' : 'SampleNTT(Â)',
+            active:
+              step.phase === 'MATRIX GENERATION' ||
+              step.phase === 'Matrix Generation' ||
+              step.id.includes('matrix-row') ||
+              step.id.includes('expand-a'),
+          },
+          {
+            label: '3. NOISE / MASK',
+            desc: isMlDsa ? 'ExpandS / ExpandMask' : 'CBD(η₁, η₂)',
+            active:
+              step.phase === 'SECRET SAMPLING' ||
+              step.phase === 'Noise Sampling' ||
+              step.id.includes('cbd') ||
+              step.id.includes('expand-s') ||
+              step.id.includes('expand-mask'),
+          },
+          {
+            label: '4. NTT ALGEBRA',
+            desc: isMlDsa ? 'Â·ŷ mod q' : 'Â·ŝ + ê mod q',
+            active:
+              step.phase === 'NTT ALGEBRA' ||
+              step.phase === 'NTT Algebra' ||
+              step.phase === 'ROUNDING' ||
+              step.phase === 'Rounding' ||
+              step.phase === 'BOUNDS CHECK' ||
+              step.id.includes('ntt') ||
+              step.id.includes('comp') ||
+              step.id.includes('inner-prod') ||
+              step.id.includes('diff'),
+          },
+          {
+            label: isMlDsa ? '5. REJECTION / SIG' : '5. KEM DERIVATION',
+            desc: isMlDsa ? '||z||_∞ bound check' : 'Shared Key (K)',
+            active:
+              step.phase === 'REJECTION SAMPLING' ||
+              step.phase === 'COMPLETE' ||
+              step.phase === 'Key Assembly' ||
+              step.phase === 'Encapsulation' ||
+              step.phase === 'Decapsulation' ||
+              step.phase === 'VERIFICATION' ||
+              step.id.includes('complete') ||
+              step.id.includes('reencrypt') ||
+              step.id.includes('derivation') ||
+              step.id.includes('public-key'),
+          },
         ].map((item, idx) => (
           <div
             key={idx}

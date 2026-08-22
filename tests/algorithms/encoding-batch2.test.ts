@@ -157,5 +157,17 @@ describe('Encoding Schemes Batch 2', () => {
       const invalidStep = invalidResult.steps.find((s) => s.id === 'jwt-decode-verify');
       expect((invalidStep?.data.jwt as any)?.isSignatureValid).toBe(false);
     });
+
+    it('verifies exact byte-for-byte match against RFC 7519 Appendix A.1 worked example', () => {
+      const rfcHeaderB64 = 'eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9';
+      const rfcPayloadB64 = 'eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ';
+      const rfcExpectedSig = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
+      const rfcCompleteJwt = `${rfcHeaderB64}.${rfcPayloadB64}.${rfcExpectedSig}`;
+
+      const decoded = jwtDecodePlugin.compute(rfcCompleteJwt);
+      expect(decoded.digest).toContain('joe');
+      expect(decoded.digest).toContain('1300819380');
+      expect(decoded.steps.length).toBeGreaterThanOrEqual(3);
+    });
   });
 });

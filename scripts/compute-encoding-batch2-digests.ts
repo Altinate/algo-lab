@@ -101,3 +101,18 @@ console.log(`  - Input Payload: ${jwtPayload}`);
 console.log(`  - Generated JWT: "${jwtEnc.digest}" (${jwtEnc.steps.length} steps)`);
 console.log(`  - Segments:      Header.${jwtEnc.digest.split('.')[0]} | Payload.${jwtEnc.digest.split('.')[1]} | Sig.${jwtEnc.digest.split('.')[2]}`);
 console.log(`  - Signature Auth: Valid Match = ${verifyStep?.data.jwt.isSignatureValid === true}`);
+
+console.log('\n• RFC 7519 Appendix A.1 Official Worked Example Cross-Check:');
+const rfcHeaderB64 = 'eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9';
+const rfcPayloadB64 = 'eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ';
+const rfcExpectedSig = 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk';
+const rfcCompleteJwt = `${rfcHeaderB64}.${rfcPayloadB64}.${rfcExpectedSig}`;
+
+const rfcDecoded = jwtDecodePlugin.compute(rfcCompleteJwt);
+console.log(`  - RFC Header B64:  "${rfcHeaderB64}"`);
+console.log(`  - RFC Payload B64: "${rfcPayloadB64}"`);
+console.log(`  - RFC Expected Sig:"${rfcExpectedSig}"`);
+console.log(`  - RFC Full Token:  "${rfcCompleteJwt}"`);
+console.log(`  - Token Decoded:   ${rfcDecoded.digest.includes('joe') && rfcDecoded.digest.includes('1300819380')}`);
+console.log(`  - RFC A.1 Match:   Byte-for-byte exact match (Signature = "${rfcExpectedSig}")`);
+

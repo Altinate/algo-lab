@@ -60,7 +60,7 @@ function serveFile(req, res, filePath) {
       'Content-Length': stats.size,
       ...SECURITY_HEADERS,
     };
-    if (filePath.includes('/assets/')) {
+    if (filePath.includes('/assets/') || filePath.includes('/fonts/')) {
       headers['Cache-Control'] = 'public, max-age=31536000, immutable';
     } else {
       headers['Cache-Control'] = 'no-cache';

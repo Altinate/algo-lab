@@ -69,6 +69,9 @@ import { rsaPlugins } from './asymmetric/rsa';
 import { ecdsaPlugins } from './asymmetric/ecdsa';
 import { dhPlugins } from './asymmetric/dh';
 
+// Post-Quantum Cryptography (ML-KEM, ML-DSA)
+import { mlKemPlugins } from './pqc/ml-kem';
+
 import type { AlgorithmCategory } from './types';
 
 const registry = new Map<string, AlgorithmPlugin>();
@@ -145,6 +148,9 @@ chachaPlugins.forEach(register);
 rsaPlugins.forEach(register);
 ecdsaPlugins.forEach(register);
 dhPlugins.forEach(register);
+
+// Register all Post-Quantum Cryptography Plugins
+mlKemPlugins.forEach(register);
 
 /** Get an algorithm plugin by name */
 export function getAlgorithm(name: string): AlgorithmPlugin | undefined {

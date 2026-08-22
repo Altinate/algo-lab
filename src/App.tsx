@@ -122,12 +122,15 @@ export default function App() {
             </button>
 
             <button
-              disabled
-              className="rounded-[2px] px-1.5 py-0.5 text-[8.5px] font-medium uppercase bg-[#090c10] text-[#475569] border border-[#1f2937]/60 cursor-not-allowed opacity-60 hidden lg:inline-flex items-center gap-1"
-              title="Phase 4 Expansion"
+              onClick={() => engine.setCategory('pqc')}
+              className={`rounded-[2px] px-2 py-0.5 text-[9px] font-bold uppercase transition-all flex items-center gap-1 ${
+                engine.category === 'pqc'
+                  ? 'bg-[#0f1f2e] text-[#38bdf8] border border-[#38bdf8]/60 shadow-[0_0_8px_rgba(56,189,248,0.15)]'
+                  : 'bg-[#0e131b] text-[#64748b] hover:text-[#cbd5e1] border border-[#1f2937]'
+              }`}
             >
               <span>⚛</span>
-              <span>POST-QUANTUM (PHASE 4)</span>
+              <span>POST-QUANTUM (5)</span>
             </button>
           </div>
         </div>

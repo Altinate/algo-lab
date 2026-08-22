@@ -35,6 +35,7 @@ export type VisualizationType =
   | 'asymmetric-modexp'   // Show BigInt ModExp & CRT decomposition (RSA)
   | 'ecc-point'           // Show Elliptic Curve point arithmetic & scalar multiplication (ECDSA)
   | 'key-exchange'        // Show 2-party key agreement protocol swimlane (DH, ECDH)
+  | 'lattice-polynomial'  // Show Post-Quantum lattice polynomial spectrum & NTT butterflies (ML-KEM, ML-DSA)
   | 'xor-table'           // Show XOR/polynomial operations (CRC32, Adler32)
   | 'merkle-tree'         // Show tree structure (BLAKE3)
   | 'mixing-function'     // Show G mixing rounds (BLAKE2, BLAKE3, ChaCha20)

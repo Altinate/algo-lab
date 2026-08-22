@@ -143,9 +143,26 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('ECDH-P256');
   });
 
+  it('registers all 9 built-in post-quantum algorithms', () => {
+    const pqcAlgorithms = listAlgorithms('pqc');
+    expect(pqcAlgorithms.length).toBe(9);
+    const names = pqcAlgorithms.map((a) => a.info.name);
+
+    // ML-KEM
+    expect(names).toContain('ML-KEM-512 (KeyGen)');
+    expect(names).toContain('ML-KEM-512 (Encapsulate)');
+    expect(names).toContain('ML-KEM-512 (Decapsulate)');
+    expect(names).toContain('ML-KEM-768 (KeyGen)');
+    expect(names).toContain('ML-KEM-768 (Encapsulate)');
+    expect(names).toContain('ML-KEM-768 (Decapsulate)');
+    expect(names).toContain('ML-KEM-1024 (KeyGen)');
+    expect(names).toContain('ML-KEM-1024 (Encapsulate)');
+    expect(names).toContain('ML-KEM-1024 (Decapsulate)');
+  });
+
   it('can look up every algorithm by name across all categories', () => {
     const algorithms = listAlgorithms();
-    expect(algorithms.length).toBe(83);
+    expect(algorithms.length).toBe(92);
     for (const algo of algorithms) {
       const retrieved = getAlgorithm(algo.info.name);
       expect(retrieved).toBeDefined();
@@ -153,7 +170,7 @@ describe('Algorithm Registry', () => {
     }
   });
 
-  it('groups algorithms by family correctly for hash, symmetric, and asymmetric categories', () => {
+  it('groups algorithms by family correctly for hash, symmetric, asymmetric, and pqc categories', () => {
     const hashFamilies = getAlgorithmsByFamily('hash');
     expect(hashFamilies.has('MD')).toBe(true);
     expect(hashFamilies.has('SHA-1')).toBe(true);
@@ -180,6 +197,9 @@ describe('Algorithm Registry', () => {
     expect(asymFamilies.has('RSA Cryptosystem')).toBe(true);
     expect(asymFamilies.has('Elliptic Curve (ECDSA)')).toBe(true);
     expect(asymFamilies.has('Diffie-Hellman Key Exchange')).toBe(true);
+
+    const pqcFamilies = getAlgorithmsByFamily('pqc');
+    expect(pqcFamilies.has('ML-KEM (Kyber)')).toBe(true);
   });
 
   it('computes hash/cipher and steps for all registered algorithms', () => {

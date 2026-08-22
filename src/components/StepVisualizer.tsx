@@ -12,6 +12,7 @@ import FeistelLadderView from './visualizations/FeistelLadderView';
 import AsymmetricModExpView from './visualizations/AsymmetricModExpView';
 import EccPointView from './visualizations/EccPointView';
 import KeyExchangeView from './visualizations/KeyExchangeView';
+import LatticePolynomialView from './visualizations/LatticePolynomialView';
 
 interface StepVisualizerProps {
   step: ComputationStep | null;
@@ -52,6 +53,8 @@ export default function StepVisualizer({
         return <EccPointView step={step} />;
       case 'key-exchange':
         return <KeyExchangeView step={step} />;
+      case 'lattice-polynomial':
+        return <LatticePolynomialView step={step} />;
       case 'xor-table':
         return <XorTableView step={step} />;
       case 'merkle-tree':

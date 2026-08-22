@@ -84,6 +84,17 @@ export default function EccPointView({ step }: EccPointViewProps) {
         </button>
       </div>
 
+      {/* Static Default Nonce Security Notice (present only on the ECDSA sign ephemeral-point step) */}
+      {data.kHex && (
+        <div className="rounded-[2px] border border-[#e5a93b]/40 bg-[#15120c] px-2.5 py-1.5 text-[9.5px] leading-relaxed text-[#e5a93b]">
+          <span className="font-bold uppercase tracking-wider">⚠ Statistical nonce (k): </span>
+          The default static nonce shown here is fixed for reproducible KAT-vector verification.
+          Reusing a nonce across messages lets an attacker recover the private key — for
+          production signature generation supply a fresh random nonce via{" "}
+          <span className="font-semibold text-[#f8fafc]">options.kNonceHex</span>.
+        </div>
+      )}
+
       {/* 1. Curve Parameters Deck */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
         {data.pHex && (

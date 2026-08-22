@@ -19,18 +19,58 @@ export default function CipherOutput({
   isComplete,
 }: CipherOutputProps) {
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const [viewAscii, setViewAscii] = useState(direction === 'decrypt');
 
   const isEncrypt = direction !== 'decrypt';
   const byteCount = Math.floor(outputHex.length / 2);
   const asciiText = hexToString(outputHex);
 
-  const handleCopy = () => {
+  const flashCopied = () => {
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
+  };
+
+  /** Legacy fallback for environments without the async Clipboard API (e.g. HTTP, older browsers) */
+  const legacyCopy = (text: string) => {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    let ok = false;
+    try {
+      ok = document.execCommand('copy');
+    } catch {
+      ok = false;
+    }
+    document.body.removeChild(textarea);
+    return ok;
+  };
+
+  const handleCopy = async () => {
     if (!outputHex) return;
     const textToCopy = viewAscii ? asciiText : outputHex;
-    navigator.clipboard.writeText(textToCopy);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+      } catch {
+        if (!legacyCopy(textToCopy)) {
+          setCopyFailed(true);
+          window.setTimeout(() => setCopyFailed(false), 2000);
+          return;
+        }
+      }
+    } else if (!legacyCopy(textToCopy)) {
+      setCopyFailed(true);
+      window.setTimeout(() => setCopyFailed(false), 2000);
+      return;
+    }
+
+    flashCopied();
   };
 
   return (
@@ -88,9 +128,14 @@ export default function CipherOutput({
           {outputHex && (
             <button
               onClick={handleCopy}
-              className="ml-2 shrink-0 rounded-[2px] bg-[#1a2232] px-2 py-0.5 text-[9px] font-medium text-[#38bdf8] hover:bg-[#243044] transition-colors border border-[#1f2937]"
+              title={copyFailed ? 'Clipboard unavailable — copy failed' : 'Copy to clipboard'}
+              className={`ml-2 shrink-0 rounded-[2px] px-2 py-0.5 text-[9px] font-medium transition-colors border ${
+                copyFailed
+                  ? 'bg-[#2a1318] text-[#f87171] border-[#f87171]/40'
+                  : 'bg-[#1a2232] text-[#38bdf8] hover:bg-[#243044] border-[#1f2937]'
+              }`}
             >
-              {copied ? 'COPIED ✓' : 'COPY'}
+              {copyFailed ? 'COPY FAILED' : copied ? 'COPIED ✓' : 'COPY'}
             </button>
           )}
         </div>

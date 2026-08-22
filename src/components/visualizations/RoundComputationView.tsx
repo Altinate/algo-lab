@@ -25,6 +25,100 @@ export interface ConstantItem {
   active?: boolean;
 }
 
+/** A single hex/binary value field (register, rotation output, etc.) */
+interface HexField {
+  hex: string;
+  binary?: string;
+}
+
+/** ALU rotation / shift telemetry for the big Σ and lower σ expansions (32-bit & 64-bit fields) */
+interface SigmaPayload {
+  input: HexField & { index?: number };
+  result: HexField;
+  // big Σ₁ (Temp1): 64-bit & 32-bit
+  rot14: HexField; rot18: HexField; rot41: HexField;
+  rot6: HexField; rot11: HexField; rot25: HexField;
+  // big Σ₀ (Temp2): 64-bit & 32-bit
+  rot28: HexField; rot34: HexField; rot39: HexField;
+  rot2: HexField; rot13: HexField; rot22: HexField;
+  // lower σ₀: 64-bit & 32-bit
+  rot1: HexField; rot8: HexField; shr7: HexField;
+  rot7: HexField; shr3: HexField;
+  // lower σ₁: 64-bit & 32-bit
+  rot19: HexField; rot61: HexField; shr6: HexField;
+  rot17: HexField; shr10: HexField;
+}
+
+interface ChPayload {
+  eAndF: HexField;
+  notEAndG: HexField;
+  result: HexField;
+}
+
+interface MajPayload {
+  aAndB: HexField;
+  aAndC: HexField;
+  bAndC: HexField;
+  result: HexField;
+}
+
+interface Temp1Payload {
+  h: HexField;
+  k: HexField;
+  w: HexField;
+  sigma1: SigmaPayload;
+  ch: ChPayload;
+  result: HexField;
+}
+
+interface Temp2Payload {
+  sigma0: SigmaPayload;
+  maj: MajPayload;
+  result: HexField;
+}
+
+interface Sha1Payload {
+  funcName?: string;
+  formula?: string;
+  a: HexField; b: HexField; c: HexField; d: HexField; e: HexField;
+  fResult: HexField;
+  rot5A: HexField;
+  rot30B: HexField;
+  temp: HexField;
+  k: HexField;
+  w: HexField;
+}
+
+interface Md5Payload {
+  funcName?: string;
+  formula?: string;
+  a: HexField; b: HexField; c: HexField; d: HexField;
+  mIndex?: number; kIndex?: number; shift?: number;
+  fResult: HexField;
+  m: HexField;
+  k: HexField;
+  sum: HexField;
+  rotResult: HexField;
+  newB: HexField;
+}
+
+interface RipemdLine {
+  funcName: string;
+  formula: string;
+  shift: number;
+  xIndex?: number;
+  a: HexField; b: HexField; c: HexField; d: HexField; e?: HexField;
+  fResult: HexField;
+  xVal: HexField;
+  kHex: string;
+  tResult: HexField;
+}
+
+interface RipemdPayload {
+  leftLine: RipemdLine;
+  rightLine: RipemdLine;
+}
+
 interface Props {
   step: ComputationStep;
 }
@@ -53,22 +147,22 @@ export default function RoundComputationView({ step }: Props) {
   const activeW = data.activeW as ScheduleItem | undefined;
 
   // SHA-256 / SHA-512 / SHA-2 sub-computation details
-  const temp1 = data.temp1 as any;
-  const temp2 = data.temp2 as any;
-  const sigma0Expansion = data.sigma0 as any;
-  const sigma1Expansion = data.sigma1 as any;
-  const wMinus16 = data.wMinus16 as any;
-  const wMinus7 = data.wMinus7 as any;
-  const scheduleResult = data.result as any;
+  const temp1 = data.temp1 as Temp1Payload | undefined;
+  const temp2 = data.temp2 as Temp2Payload | undefined;
+  const sigma0Expansion = data.sigma0 as SigmaPayload | undefined;
+  const sigma1Expansion = data.sigma1 as SigmaPayload | undefined;
+  const wMinus16 = data.wMinus16 as HexField | undefined;
+  const wMinus7 = data.wMinus7 as HexField | undefined;
+  const scheduleResult = data.result as HexField | undefined;
 
   // MD5 sub-computation details
-  const md5Step = data.md5Step as any;
+  const md5Step = data.md5Step as Md5Payload | undefined;
 
   // SHA-1 sub-computation details
-  const sha1Step = data.sha1Step as any;
+  const sha1Step = data.sha1Step as Sha1Payload | undefined;
 
   // RIPEMD dual-line sub-computation details
-  const ripemdStep = data.ripemdStep as any;
+  const ripemdStep = data.ripemdStep as RipemdPayload | undefined;
 
   // Hash updates
   const updates = data.updates as Array<{

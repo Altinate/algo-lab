@@ -153,10 +153,14 @@ export function pkcs1v15PadEncrypt(data: Uint8Array, keySizeBytes: number): Uint
   padded[0] = 0x00;
   padded[1] = 0x02; // Block type 2 (encryption)
 
-  // Pseudo-random non-zero padding string (PS)
+  // Pseudo-random non-zero padding string (PS) from a CSPRNG
+  const psBytes = new Uint8Array(psLen);
+  if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.getRandomValues) {
+    globalThis.crypto.getRandomValues(psBytes);
+  }
   for (let i = 0; i < psLen; i++) {
-    let rand = Math.floor(Math.random() * 255) + 1;
-    padded[2 + i] = rand;
+    // Map 0..255 → 1..255 so that no padding byte is zero (PS must be non-zero)
+    padded[2 + i] = (psBytes[i] % 255) + 1;
   }
 
   padded[2 + psLen] = 0x00;

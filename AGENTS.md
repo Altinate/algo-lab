@@ -25,7 +25,7 @@ Playback Engine (src/hooks/useHashEngine.ts)
   ├── Manages currentStepIndex, isPlaying, playbackSpeed, scrubber, XOF byte length
   │
   ▼
-Visualization Router (src/components/visualizations/StepVisualization.tsx)
+Visualization Router (src/components/StepVisualizer.tsx)
   │
   ├── 'round-computation' ──▶ RoundComputationView.tsx (3-bus logic analyzer: MD, SHA-1, SHA-2, RIPEMD, SM3, XXH)
   ├── 'state-matrix'      ──▶ StateMatrixView.tsx (5×5 Keccak sponge matrix & 8×8 Whirlpool cipher matrix)

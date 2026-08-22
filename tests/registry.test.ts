@@ -116,9 +116,9 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('ChaCha20-Poly1305 (Decrypt)');
   });
 
-  it('registers all 12 asymmetric algorithms (RSA-2048, RSA-Pedagogical, and ECDSA)', () => {
+  it('registers all 15 asymmetric algorithms (RSA-2048, RSA-Pedagogical, ECDSA, and DH/ECDH)', () => {
     const asymAlgorithms = listAlgorithms('asymmetric');
-    expect(asymAlgorithms.length).toBe(12);
+    expect(asymAlgorithms.length).toBe(15);
     const names = asymAlgorithms.map((a) => a.info.name);
 
     // RSA
@@ -136,11 +136,16 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('ECDSA-secp256k1 (Verify)');
     expect(names).toContain('ECDSA-P256 (Sign)');
     expect(names).toContain('ECDSA-P256 (Verify)');
+
+    // Diffie-Hellman & ECDH
+    expect(names).toContain('Diffie-Hellman-MODP-2048');
+    expect(names).toContain('ECDH-secp256k1');
+    expect(names).toContain('ECDH-P256');
   });
 
   it('can look up every algorithm by name across all categories', () => {
     const algorithms = listAlgorithms();
-    expect(algorithms.length).toBe(80);
+    expect(algorithms.length).toBe(83);
     for (const algo of algorithms) {
       const retrieved = getAlgorithm(algo.info.name);
       expect(retrieved).toBeDefined();
@@ -174,6 +179,7 @@ describe('Algorithm Registry', () => {
     const asymFamilies = getAlgorithmsByFamily('asymmetric');
     expect(asymFamilies.has('RSA Cryptosystem')).toBe(true);
     expect(asymFamilies.has('Elliptic Curve (ECDSA)')).toBe(true);
+    expect(asymFamilies.has('Diffie-Hellman Key Exchange')).toBe(true);
   });
 
   it('computes hash/cipher and steps for all registered algorithms', () => {

@@ -67,6 +67,7 @@ import { chachaPlugins } from './symmetric/chacha20-poly1305';
 // Asymmetric Cryptography (RSA, ECDSA, DH)
 import { rsaPlugins } from './asymmetric/rsa';
 import { ecdsaPlugins } from './asymmetric/ecdsa';
+import { dhPlugins } from './asymmetric/dh';
 
 import type { AlgorithmCategory } from './types';
 
@@ -143,6 +144,7 @@ chachaPlugins.forEach(register);
 // Register all Asymmetric Cryptography Plugins
 rsaPlugins.forEach(register);
 ecdsaPlugins.forEach(register);
+dhPlugins.forEach(register);
 
 /** Get an algorithm plugin by name */
 export function getAlgorithm(name: string): AlgorithmPlugin | undefined {

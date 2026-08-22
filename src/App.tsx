@@ -118,7 +118,7 @@ export default function App() {
               }`}
             >
               <span>🔑</span>
-              <span>ASYMMETRIC (12)</span>
+              <span>ASYMMETRIC (15)</span>
             </button>
 
             <button

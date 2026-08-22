@@ -11,6 +11,7 @@ import AesStateMatrixView from './visualizations/AesStateMatrixView';
 import FeistelLadderView from './visualizations/FeistelLadderView';
 import AsymmetricModExpView from './visualizations/AsymmetricModExpView';
 import EccPointView from './visualizations/EccPointView';
+import KeyExchangeView from './visualizations/KeyExchangeView';
 
 interface StepVisualizerProps {
   step: ComputationStep | null;
@@ -49,6 +50,8 @@ export default function StepVisualizer({
         return <AsymmetricModExpView step={step} />;
       case 'ecc-point':
         return <EccPointView step={step} />;
+      case 'key-exchange':
+        return <KeyExchangeView step={step} />;
       case 'xor-table':
         return <XorTableView step={step} />;
       case 'merkle-tree':

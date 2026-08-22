@@ -59,8 +59,10 @@ import sm3Plugin from './sm3';
 // Cipher-Based Hash
 import whirlpoolPlugin from './whirlpool';
 
-// Symmetric Ciphers (AES 128/192/256 ECB/CBC/CTR/GCM)
+// Symmetric Ciphers (AES 128/192/256 ECB/CBC/CTR/GCM, DES, 3DES, ChaCha20-Poly1305)
 import { aesPlugins } from './symmetric/aes';
+import { desPlugins } from './symmetric/des';
+import { chachaPlugins } from './symmetric/chacha20-poly1305';
 
 import type { AlgorithmCategory } from './types';
 
@@ -129,8 +131,10 @@ function register(plugin: AlgorithmPlugin) {
   whirlpoolPlugin,
 ].forEach(register);
 
-// Register all Symmetric Ciphers (22 algorithms across 4 families)
+// Register all Symmetric Ciphers (34 algorithms across 7 families)
 aesPlugins.forEach(register);
+desPlugins.forEach(register);
+chachaPlugins.forEach(register);
 
 /** Get an algorithm plugin by name */
 export function getAlgorithm(name: string): AlgorithmPlugin | undefined {
@@ -167,6 +171,9 @@ export function getAlgorithmsByFamily(category: AlgorithmCategory = 'hash'): Map
     'AES-192',
     'AES-256',
     'AES-GCM (AEAD)',
+    'DES',
+    '3DES',
+    'ChaCha20-Poly1305',
   ];
 
   const asymmetricFamilyOrder = [

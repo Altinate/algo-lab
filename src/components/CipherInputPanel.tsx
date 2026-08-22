@@ -42,18 +42,31 @@ export default function CipherInputPanel({
   };
 
   const loadStandardPreset = () => {
-    if (keySize === 128) {
-      onKeyHexChange('2b7e151628aed2a6abf7158809cf4f3c');
-    } else if (keySize === 192) {
-      onKeyHexChange('8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b');
+    if (info.family === 'DES') {
+      onKeyHexChange('133457799bbcdff1');
+      if (info.requiresIV) onIvHexChange('0123456789abcdef');
+    } else if (info.family === '3DES') {
+      onKeyHexChange('0123456789abcdef23456789abcdef01456789abcdef0123');
+      if (info.requiresIV) onIvHexChange('1234567890abcdef');
+    } else if (info.family === 'ChaCha20-Poly1305') {
+      onKeyHexChange('808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f');
+      if (info.requiresIV) onIvHexChange('070000004041424344454647');
+      if (info.requiresAAD) onAadHexChange('50515253c0c1c2c3c4c5c6c7');
     } else {
-      onKeyHexChange('603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4');
-    }
-    if (info.requiresIV) {
-      onIvHexChange('000102030405060708090a0b0c0d0e0f');
-    }
-    if (info.requiresAAD) {
-      onAadHexChange('feedfacedeadbeefcafebeeffeedfacedeadbeefcafebeef');
+      // AES
+      if (keySize === 128) {
+        onKeyHexChange('2b7e151628aed2a6abf7158809cf4f3c');
+      } else if (keySize === 192) {
+        onKeyHexChange('8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b');
+      } else {
+        onKeyHexChange('603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4');
+      }
+      if (info.requiresIV) {
+        onIvHexChange('000102030405060708090a0b0c0d0e0f');
+      }
+      if (info.requiresAAD) {
+        onAadHexChange('feedfacedeadbeefcafebeeffeedfacedeadbeefcafebeef');
+      }
     }
   };
 

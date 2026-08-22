@@ -25,7 +25,7 @@ This tool turns abstract cryptographic specifications (NIST FIPS 180-4, NIST FIP
 
 ---
 
-## ✨ Supported Algorithms (56 Algorithms across 15 Families)
+## ✨ Supported Algorithms (68 Algorithms across 18 Families)
 
 ### ⌗ Hash Functions (34 Algorithms across 11 Families)
 - **Legacy MD Family** (RFC 1319, RFC 1320, RFC 1321):
@@ -79,7 +79,7 @@ This tool turns abstract cryptographic specifications (NIST FIPS 180-4, NIST FIP
 - **Cipher-Based Hash Structures**:
   - `Whirlpool` (ISO/IEC 10118-3 / Barreto-Rijmen 512-bit Miyaguchi-Preneel hash with 10-round AES-like $8 \times 8$ byte state transformations)
 
-### 🔒 Symmetric Ciphers (22 Algorithms across 4 Families)
+### 🔒 Symmetric Ciphers (34 Algorithms across 7 Families)
 - **AES-128 Family** (NIST FIPS 197 & NIST SP 800-38A):
   - `AES-128-ECB` (Encrypt & Decrypt)
   - `AES-128-CBC` (Encrypt & Decrypt)
@@ -99,10 +99,24 @@ This tool turns abstract cryptographic specifications (NIST FIPS 180-4, NIST FIP
   - `AES-128-GCM` (Encrypt & Decrypt with GHASH $GF(2^{128})$ authentication tag verification)
   - `AES-256-GCM` (Encrypt & Decrypt with GHASH $GF(2^{128})$ authentication tag verification)
 
+- **DES Family** (NIST FIPS 46-3):
+  - `DES-ECB` (Encrypt & Decrypt, 16-round Feistel Network)
+  - `DES-CBC` (Encrypt & Decrypt, 16-round Feistel Network with IV chaining)
+
+- **3DES (Triple-DES) Family** (NIST SP 800-67 Rev 2):
+  - `3DES-ECB` (Encrypt & Decrypt, 3-key EDE architecture)
+  - `3DES-CBC` (Encrypt & Decrypt, 3-key EDE architecture with IV chaining)
+
+- **ChaCha20-Poly1305 Family** (IETF RFC 8439):
+  - `ChaCha20` (Encrypt & Decrypt, 20-round Quarter-Round stream cipher)
+  - `ChaCha20-Poly1305` (AEAD Encrypt & Decrypt with Poly1305 modulo $2^{130}-5$ authentication tag verification)
+
 ---
 
 ## 🔬 Dedicated Hardware Telemetry Visualizers
 
+- **Feistel 2-Branch Ladder (`FeistelLadderView`)**:
+  - 16-round Feistel network telemetry for DES and 3DES: Dual-branch $L_i, R_i$ split registers, $E$-expansion (32b $\rightarrow$ 48b), subkey XOR ($E(R) \oplus K_i$), 8 S-box substitution cards ($S_1..S_8$), and $P$-permutation bus.
 - **AES $4 \times 4$ State Matrix Inspector (`AesStateMatrixView`)**:
   - Step-by-step block cipher transformation telemetry: **SubBytes**, **ShiftRows**, **MixColumns**, **AddRoundKey**, and their exact inverses (**InvShiftRows**, **InvSubBytes**, **InvMixColumns**), with 4x4 matrix difference highlighting, row shift offsets, and Galois field matrix constants.
 - **3-Bus Logic Analyzer (`RoundComputationView`)**:
@@ -110,9 +124,7 @@ This tool turns abstract cryptographic specifications (NIST FIPS 180-4, NIST FIP
 - **$5 \times 5$ / $8 \times 8$ State Matrix Inspector (`StateMatrixView`)**:
   - Fluid 1600-bit Keccak state matrix and 512-bit Whirlpool matrix with 64-bit hex lane display, lane diff highlights, and sponge phase tracking.
 - **$4 \times 4$ ARX Mixing Matrix (`MixingFunctionView`)**:
-  - 16-word work state with column and diagonal $G$-mixing operation cards and $\Sigma$ message permutation telemetry.
-- **Polynomial Stream Engine (`XorTableView`)**:
-  - 5-step FCS-32 and CRC-16 register transformation pipeline with an active 256-entry polynomial ROM table.
+  - 16-word work state with column and diagonal $G$-mixing operation cards, Quarter-Rounds (ChaCha20), and $\Sigma$ message permutation telemetry (BLAKE).
 - **Polynomial Stream Engine (`XorTableView`)**:
   - 5-step FCS-32 and CRC-16 register transformation pipeline with an active 256-entry polynomial ROM table.
 

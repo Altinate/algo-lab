@@ -62,11 +62,12 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('Whirlpool');
   });
 
-  it('registers all 22 symmetric cipher algorithms (AES 128/192/256 ECB/CBC/CTR/GCM)', () => {
+  it('registers all 34 symmetric cipher algorithms (AES, DES, 3DES, ChaCha20-Poly1305)', () => {
     const symAlgorithms = listAlgorithms('symmetric');
-    expect(symAlgorithms.length).toBe(22);
+    expect(symAlgorithms.length).toBe(34);
     const names = symAlgorithms.map((a) => a.info.name);
 
+    // AES-128
     expect(names).toContain('AES-128-ECB (Encrypt)');
     expect(names).toContain('AES-128-ECB (Decrypt)');
     expect(names).toContain('AES-128-CBC (Encrypt)');
@@ -74,6 +75,7 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('AES-128-CTR (Encrypt)');
     expect(names).toContain('AES-128-CTR (Decrypt)');
 
+    // AES-192
     expect(names).toContain('AES-192-ECB (Encrypt)');
     expect(names).toContain('AES-192-ECB (Decrypt)');
     expect(names).toContain('AES-192-CBC (Encrypt)');
@@ -81,6 +83,7 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('AES-192-CTR (Encrypt)');
     expect(names).toContain('AES-192-CTR (Decrypt)');
 
+    // AES-256
     expect(names).toContain('AES-256-ECB (Encrypt)');
     expect(names).toContain('AES-256-ECB (Decrypt)');
     expect(names).toContain('AES-256-CBC (Encrypt)');
@@ -88,15 +91,34 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('AES-256-CTR (Encrypt)');
     expect(names).toContain('AES-256-CTR (Decrypt)');
 
+    // AES-GCM
     expect(names).toContain('AES-128-GCM (Encrypt)');
     expect(names).toContain('AES-128-GCM (Decrypt)');
     expect(names).toContain('AES-256-GCM (Encrypt)');
     expect(names).toContain('AES-256-GCM (Decrypt)');
+
+    // DES
+    expect(names).toContain('DES-ECB (Encrypt)');
+    expect(names).toContain('DES-ECB (Decrypt)');
+    expect(names).toContain('DES-CBC (Encrypt)');
+    expect(names).toContain('DES-CBC (Decrypt)');
+
+    // 3DES
+    expect(names).toContain('3DES-ECB (Encrypt)');
+    expect(names).toContain('3DES-ECB (Decrypt)');
+    expect(names).toContain('3DES-CBC (Encrypt)');
+    expect(names).toContain('3DES-CBC (Decrypt)');
+
+    // ChaCha20 & ChaCha20-Poly1305
+    expect(names).toContain('ChaCha20 (Encrypt)');
+    expect(names).toContain('ChaCha20 (Decrypt)');
+    expect(names).toContain('ChaCha20-Poly1305 (Encrypt)');
+    expect(names).toContain('ChaCha20-Poly1305 (Decrypt)');
   });
 
   it('can look up every algorithm by name across all categories', () => {
     const algorithms = listAlgorithms();
-    expect(algorithms.length).toBe(56);
+    expect(algorithms.length).toBe(68);
     for (const algo of algorithms) {
       const retrieved = getAlgorithm(algo.info.name);
       expect(retrieved).toBeDefined();
@@ -123,6 +145,9 @@ describe('Algorithm Registry', () => {
     expect(symFamilies.has('AES-192')).toBe(true);
     expect(symFamilies.has('AES-256')).toBe(true);
     expect(symFamilies.has('AES-GCM (AEAD)')).toBe(true);
+    expect(symFamilies.has('DES')).toBe(true);
+    expect(symFamilies.has('3DES')).toBe(true);
+    expect(symFamilies.has('ChaCha20-Poly1305')).toBe(true);
   });
 
   it('computes hash/cipher and steps for all registered algorithms', () => {

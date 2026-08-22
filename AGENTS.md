@@ -175,22 +175,44 @@ export interface AesStateMatrixData {
 }
 ```
 
+### 2.6 `FeistelLadderView` (`visualizationType: 'feistel-ladder'`)
+Used by **DES (ECB, CBC), 3DES (ECB, CBC)**.
+
+```typescript
+export interface FeistelLadderData {
+  roundIndex?: number;             // Current round (1..16)
+  totalRounds?: number;            // Total rounds (16)
+  prevLHex?: string;               // 32-bit left half before round
+  prevRHex?: string;               // 32-bit right half before round
+  newLHex?: string;                // 32-bit left half after round (L_i = R_{i-1})
+  newRHex?: string;                // 32-bit right half after round (R_i = L_{i-1} ⊕ F(R_{i-1}, K_i))
+  subkeyHex?: string;              // 48-bit subkey K_i (12 hex chars)
+  eExpansionHex?: string;          // 48-bit E-expansion value
+  sboxInHex?: string;              // 48-bit S-box input (E(R) ⊕ K_i)
+  sboxOutputs?: number[];          // 8 4-bit nibbles from S-boxes
+  fOutputHex?: string;             // 32-bit P-permutation output F(R, K)
+  outputHex?: string;              // 64-bit block ciphertext output
+  blockIndex?: number;             // Multi-block index (0-based)
+  totalBlocks?: number;            // Total blocks count
+}
+```
+
 ---
 
 ## 3. Hard Engineering Rules (Do & Don't)
 
 ### ✅ DO:
 1. **Emit Canonical Payloads**: When adding or editing an algorithm plugin, ensure its step payloads conform strictly to the interfaces above.
-2. **Verify Official Test Vectors**: Every algorithm change MUST pass its official standard test vectors (NIST FIPS 180-4, NIST FIPS 202, NIST FIPS 197, NIST SP 800-38A, NIST SP 800-38D, RFC 1319, RFC 1320, RFC 1321, RFC 7693, ISO/IEC 10118-3, GB/T 32918.2-2016). Run `npm run test:run`.
-3. **Run Full Regression Suite**: Whenever modifying shared components (`RoundComputationView`, `MixingFunctionView`, `StateMatrixView`, `AesStateMatrixView`, `XorTableView`, `GenericStepView`), run the ENTIRE test suite (`npm run test:run`) to ensure zero regressions across all 56 algorithms.
-4. **Use 64-Bit BigInt Arithmetic for 64-Bit Algorithms**: JavaScript `number` loses precision above $2^{53} - 1$. Always use `bigint` with `0xFFFFFFFFFFFFFFFFn` bitmask for SHA-512, SHA-384, BLAKE2b, XXH64, Whirlpool, and Keccak/SHA-3.
+2. **Verify Official Test Vectors**: Every algorithm change MUST pass its official standard test vectors (NIST FIPS 180-4, NIST FIPS 202, NIST FIPS 197, NIST FIPS 46-3, NIST SP 800-67, NIST SP 800-38A, NIST SP 800-38D, RFC 1319, RFC 1320, RFC 1321, RFC 7693, RFC 8439, ISO/IEC 10118-3, GB/T 32918.2-2016). Run `npm run test:run`.
+3. **Run Full Regression Suite**: Whenever modifying shared components (`RoundComputationView`, `MixingFunctionView`, `StateMatrixView`, `AesStateMatrixView`, `FeistelLadderView`, `XorTableView`, `GenericStepView`), run the ENTIRE test suite (`npm run test:run`) to ensure zero regressions across all 68 algorithms.
+4. **Use 64-Bit BigInt Arithmetic for 64-Bit Algorithms**: JavaScript `number` loses precision above $2^{53} - 1$. Always use `bigint` with `0xFFFFFFFFFFFFFFFFn` bitmask for SHA-512, SHA-384, BLAKE2b, XXH64, Whirlpool, Keccak/SHA-3, and DES/3DES bitwise permutations.
 5. **Adhere to the Hardware Instrument Design System**:
    - Backgrounds: Obsidian substrate `#090c10`, `#0c1017`, `#0e131b`.
    - Borders: Hairline 1px borders with `#1f2937` or `#374151`.
    - Radii: Micro-geometry `rounded-[2px]` or `rounded-none`. Never use soft `rounded-lg` or `rounded-full` pills.
    - Typography: Monospace (`font-mono`) with `tabular-nums` forced on all numerals and formulas.
    - Chromatic 95/5 Discipline: 95% dark substrate, 5% phosphor signals (`#e5a93b` amber, `#38bdf8` cyan, `#34d399` emerald, `#c084fc` purple). Controlled text-shadow max 3px radius (e.g. `.phosphor-amber`).
-6. **Always Include Raw Test Output in Verification Reports**: When reporting test vector verification, always paste the unedited `npm run test:run` terminal output first. A formatted summary table is welcome on top of that for readability, but never as a replacement. Where test vectors are individually verified outside the test suite (e.g. to debug a suspected discrepancy), run a direct compute script (`npx tsx scripts/compute-digests.ts` or `scripts/compute-aes-digests.ts`) and paste its raw stdout. This rule exists because hand-transcribed digest values are indistinguishable from bugs when they are wrong, and re-verification is expensive.
+6. **Always Include Raw Test Output in Verification Reports**: When reporting test vector verification, always paste the unedited `npm run test:run` terminal output first. A formatted summary table is welcome on top of that for readability, but never as a replacement. Where test vectors are individually verified outside the test suite (e.g. to debug a suspected discrepancy), run a direct compute script (`npx tsx scripts/compute-digests.ts`, `scripts/compute-aes-digests.ts`, or `scripts/compute-phase2-digests.ts`) and paste its raw stdout. This rule exists because hand-transcribed digest values are indistinguishable from bugs when they are wrong, and re-verification is expensive.
 
 ### ❌ DO NOT:
 1. **DO NOT Add Fallback Key Matching to Components**: Do not write `data.crcBefore || data.prevCrc` or `data.v || data.stateMatrix` in visualizers. Fix the plugin to emit the canonical key instead.
@@ -210,7 +232,7 @@ Before considering any task complete in this repository, verify all 4 criteria:
    ```bash
    npm run test:run
    ```
-   Must output: `Test Files 39 passed (39), Tests 144 passed (144)`.
+   Must output: `Test Files 43 passed (43), Tests 157 passed (157)`.
 2. **Production Build Clean**:
    ```bash
    npm run build
@@ -219,4 +241,4 @@ Before considering any task complete in this repository, verify all 4 criteria:
 3. **No Blank UI Fallbacks**:
    Inspect playback in browser (`http://localhost:5173`) to confirm every step has populated data.
 4. **Zero Shared Component Regression**:
-   Verify SHA-256, MD5, SHA-512, and AES-128 render identically after any visualizer changes.
+   Verify SHA-256, MD5, SHA-512, AES-128, and DES-ECB render identically after any visualizer changes.

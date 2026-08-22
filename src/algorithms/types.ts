@@ -31,9 +31,10 @@ export type VisualizationType =
   | 'round-computation'   // Show working variables + round function
   | 'state-matrix'        // Show state as a matrix (SHA-3 / Keccak, Whirlpool)
   | 'aes-state-matrix'    // Show AES 4x4 State matrix (SubBytes, ShiftRows, MixColumns, AddRoundKey)
+  | 'feistel-ladder'      // Show 2-branch Feistel ladder (DES, 3DES)
   | 'xor-table'           // Show XOR/polynomial operations (CRC32, Adler32)
   | 'merkle-tree'         // Show tree structure (BLAKE3)
-  | 'mixing-function'     // Show G mixing rounds (BLAKE2, BLAKE3)
+  | 'mixing-function'     // Show G mixing rounds (BLAKE2, BLAKE3, ChaCha20)
   | 'final-digest'        // Show final concatenation → hex output
   | 'generic';            // Fallback: render data as labeled key-value pairs
 

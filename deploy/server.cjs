@@ -7,7 +7,7 @@ const path = require('path');
 
 const DIST_DIR = path.resolve(__dirname, '..', 'dist');
 const DEFAULT_PORT = parseInt(process.env.PORT || '3002', 10);
-const HOST = process.env.HOST || '0.0.0.0';
+const HOST = process.env.HOST || '127.0.0.1';
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -24,6 +24,13 @@ const MIME_TYPES = {
   '.txt': 'text/plain; charset=utf-8',
 };
 
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'no-referrer',
+  'Permissions-Policy': 'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()',
+};
+
 function serveFile(req, res, filePath) {
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
@@ -31,11 +38,15 @@ function serveFile(req, res, filePath) {
       const indexPath = path.join(DIST_DIR, 'index.html');
       return fs.readFile(indexPath, (readErr, content) => {
         if (readErr) {
-          res.writeHead(500, { 'Content-Type': 'text/plain' });
+          res.writeHead(500, { 'Content-Type': 'text/plain', ...SECURITY_HEADERS });
           res.end('500 Internal Server Error');
           return;
         }
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.writeHead(200, {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-cache',
+          ...SECURITY_HEADERS,
+        });
         res.end(content);
       });
     }
@@ -47,6 +58,7 @@ function serveFile(req, res, filePath) {
     const headers = {
       'Content-Type': contentType,
       'Content-Length': stats.size,
+      ...SECURITY_HEADERS,
     };
     if (filePath.includes('/assets/')) {
       headers['Cache-Control'] = 'public, max-age=31536000, immutable';

@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 PORT="${PORT:-3002}"
-HOST="${HOST:-0.0.0.0}"
+export HOST="127.0.0.1"
 
 cd "${APP_DIR}"
 

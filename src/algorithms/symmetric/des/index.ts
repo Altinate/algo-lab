@@ -19,7 +19,7 @@ function createDesPlugin(mode: DesMode, direction: DesDirection): AlgorithmPlugi
     securityNote: 'DES 56-bit key space can be broken via brute-force in hours (EFF Deep Crack / cloud compute). Use AES instead.',
     year: 1977,
     designers: ['IBM', 'NSA'],
-    keySize: 64, // 64 bits (56 effective)
+    keySize: 56, // 56 effective bits (64 bits with parity)
     cipherMode: mode,
     direction,
     requiresIV: mode === 'CBC',
@@ -47,7 +47,7 @@ function create3DesPlugin(mode: DesMode, direction: DesDirection): AlgorithmPlug
     securityNote: '3DES 64-bit block size suffers from birthday collisions (Sweet32 attack). Deprecated by NIST after 2023.',
     year: 1999,
     designers: ['IBM', 'ANSI X9'],
-    keySize: 192, // 3 x 64-bit keys
+    keySize: 168, // 168 effective bits (3 x 56 bits)
     cipherMode: mode,
     direction,
     requiresIV: mode === 'CBC',

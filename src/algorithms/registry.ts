@@ -64,6 +64,9 @@ import { aesPlugins } from './symmetric/aes';
 import { desPlugins } from './symmetric/des';
 import { chachaPlugins } from './symmetric/chacha20-poly1305';
 
+// Asymmetric Cryptography (RSA, ECDSA, DH)
+import { rsaPlugins } from './asymmetric/rsa';
+
 import type { AlgorithmCategory } from './types';
 
 const registry = new Map<string, AlgorithmPlugin>();
@@ -135,6 +138,9 @@ function register(plugin: AlgorithmPlugin) {
 aesPlugins.forEach(register);
 desPlugins.forEach(register);
 chachaPlugins.forEach(register);
+
+// Register all Asymmetric Cryptography Plugins
+rsaPlugins.forEach(register);
 
 /** Get an algorithm plugin by name */
 export function getAlgorithm(name: string): AlgorithmPlugin | undefined {

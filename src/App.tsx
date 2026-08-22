@@ -106,16 +106,19 @@ export default function App() {
               }`}
             >
               <span>🔒</span>
-              <span>SYMMETRIC CIPHERS (22)</span>
+              <span>SYMMETRIC CIPHERS (34)</span>
             </button>
 
             <button
-              disabled
-              className="rounded-[2px] px-1.5 py-0.5 text-[8.5px] font-medium uppercase bg-[#090c10] text-[#475569] border border-[#1f2937]/60 cursor-not-allowed opacity-60 hidden lg:inline-flex items-center gap-1"
-              title="Phase 3 Expansion"
+              onClick={() => engine.setCategory('asymmetric')}
+              className={`rounded-[2px] px-2 py-0.5 text-[9px] font-bold uppercase transition-all flex items-center gap-1 ${
+                engine.category === 'asymmetric'
+                  ? 'bg-[#1a1224] text-[#c084fc] border border-[#c084fc]/60 shadow-[0_0_8px_rgba(192,132,252,0.15)]'
+                  : 'bg-[#0e131b] text-[#64748b] hover:text-[#cbd5e1] border border-[#1f2937]'
+              }`}
             >
               <span>🔑</span>
-              <span>ASYMMETRIC (PHASE 3)</span>
+              <span>ASYMMETRIC (8)</span>
             </button>
 
             <button
@@ -209,7 +212,7 @@ export default function App() {
 
           {/* Upper Deck: Data Stream Input + Live Output */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5 items-stretch">
-            {engine.category === 'symmetric' && engine.algorithm?.info ? (
+            {(engine.category === 'symmetric' || engine.category === 'asymmetric') && engine.algorithm?.info ? (
               <>
                 <CipherInputPanel
                   info={engine.algorithm.info}

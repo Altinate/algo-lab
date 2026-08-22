@@ -116,9 +116,24 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('ChaCha20-Poly1305 (Decrypt)');
   });
 
+  it('registers all 8 asymmetric algorithms (RSA-2048 and RSA-Pedagogical)', () => {
+    const asymAlgorithms = listAlgorithms('asymmetric');
+    expect(asymAlgorithms.length).toBe(8);
+    const names = asymAlgorithms.map((a) => a.info.name);
+
+    expect(names).toContain('RSA-2048 (Encrypt)');
+    expect(names).toContain('RSA-2048 (Decrypt)');
+    expect(names).toContain('RSA-2048 (Sign)');
+    expect(names).toContain('RSA-2048 (Verify)');
+    expect(names).toContain('RSA-Pedagogical (Encrypt)');
+    expect(names).toContain('RSA-Pedagogical (Decrypt)');
+    expect(names).toContain('RSA-Pedagogical (Sign)');
+    expect(names).toContain('RSA-Pedagogical (Verify)');
+  });
+
   it('can look up every algorithm by name across all categories', () => {
     const algorithms = listAlgorithms();
-    expect(algorithms.length).toBe(68);
+    expect(algorithms.length).toBe(76);
     for (const algo of algorithms) {
       const retrieved = getAlgorithm(algo.info.name);
       expect(retrieved).toBeDefined();
@@ -126,7 +141,7 @@ describe('Algorithm Registry', () => {
     }
   });
 
-  it('groups algorithms by family correctly for hash and symmetric categories', () => {
+  it('groups algorithms by family correctly for hash, symmetric, and asymmetric categories', () => {
     const hashFamilies = getAlgorithmsByFamily('hash');
     expect(hashFamilies.has('MD')).toBe(true);
     expect(hashFamilies.has('SHA-1')).toBe(true);
@@ -148,6 +163,9 @@ describe('Algorithm Registry', () => {
     expect(symFamilies.has('DES')).toBe(true);
     expect(symFamilies.has('3DES')).toBe(true);
     expect(symFamilies.has('ChaCha20-Poly1305')).toBe(true);
+
+    const asymFamilies = getAlgorithmsByFamily('asymmetric');
+    expect(asymFamilies.has('RSA Cryptosystem')).toBe(true);
   });
 
   it('computes hash/cipher and steps for all registered algorithms', () => {

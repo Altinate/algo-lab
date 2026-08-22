@@ -9,6 +9,7 @@ import FinalDigestView from './visualizations/FinalDigestView';
 import GenericStepView from './visualizations/GenericStepView';
 import AesStateMatrixView from './visualizations/AesStateMatrixView';
 import FeistelLadderView from './visualizations/FeistelLadderView';
+import AsymmetricModExpView from './visualizations/AsymmetricModExpView';
 
 interface StepVisualizerProps {
   step: ComputationStep | null;
@@ -43,6 +44,8 @@ export default function StepVisualizer({
         return <AesStateMatrixView step={step} />;
       case 'feistel-ladder':
         return <FeistelLadderView step={step} />;
+      case 'asymmetric-modexp':
+        return <AsymmetricModExpView step={step} />;
       case 'xor-table':
         return <XorTableView step={step} />;
       case 'merkle-tree':

@@ -32,6 +32,7 @@ export type VisualizationType =
   | 'state-matrix'        // Show state as a matrix (SHA-3 / Keccak, Whirlpool)
   | 'aes-state-matrix'    // Show AES 4x4 State matrix (SubBytes, ShiftRows, MixColumns, AddRoundKey)
   | 'feistel-ladder'      // Show 2-branch Feistel ladder (DES, 3DES)
+  | 'asymmetric-modexp'   // Show BigInt ModExp & CRT decomposition (RSA)
   | 'xor-table'           // Show XOR/polynomial operations (CRC32, Adler32)
   | 'merkle-tree'         // Show tree structure (BLAKE3)
   | 'mixing-function'     // Show G mixing rounds (BLAKE2, BLAKE3, ChaCha20)

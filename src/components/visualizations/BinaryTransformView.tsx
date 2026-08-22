@@ -91,9 +91,24 @@ export default function BinaryTransformView({ step }: Props) {
     return <RadixDivisionView data={data.radixDivision as any} />;
   }
 
-  // Character transform step (URL, UTF-8, UTF-16)
+  // Character transform step (URL, UTF-8, UTF-16, Quoted-Printable)
   if (data.characterTransform) {
     return <CharacterTransformView data={data.characterTransform as any} />;
+  }
+
+  // Punycode step (RFC 3492)
+  if (data.punycode) {
+    return <PunycodeTransformView data={data.punycode as any} />;
+  }
+
+  // Morse code step (ITU-R M.1677-1)
+  if (data.morse) {
+    return <MorseTimelineView data={data.morse as any} />;
+  }
+
+  // JWT step (RFC 7519)
+  if (data.jwt) {
+    return <JwtTokenView data={data.jwt as any} />;
   }
 
   // Fallback
@@ -384,6 +399,300 @@ function CharacterTransformView({
         value={data.cumulativeOutput || '(EMPTY)'}
         type="text"
       />
+    </div>
+  );
+}
+
+function PunycodeTransformView({
+  data,
+}: {
+  data: {
+    encodingType: 'Punycode';
+    operation: 'encode' | 'decode';
+    activeChar?: string;
+    activeCodePoint?: number;
+    bias: number;
+    delta: number;
+    n: number;
+    basicString: string;
+    nonBasicChars: string[];
+    accumulatedOutput: string;
+    phaseName: string;
+  };
+}) {
+  return (
+    <div className="space-y-3 rounded-[2px] bg-[#0c1017] p-3 border border-[#1f2937] font-mono">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-1.5 border-b border-[#1f2937]">
+        <div className="flex items-center gap-2">
+          <span className="rounded-[2px] bg-[#152238] px-1.5 py-0.5 text-[9px] font-bold text-[#38bdf8] border border-[#38bdf8]/40 uppercase">
+            {data.encodingType} {data.operation.toUpperCase()}
+          </span>
+          <span className="text-[10px] text-[#cbd5e1] font-semibold">
+            {data.phaseName}
+          </span>
+        </div>
+        <span className="text-[9px] text-[#64748b] uppercase">
+          RFC 3492 BOOTSTRING IDNA
+        </span>
+      </div>
+
+      {/* State & Parameters */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 tabular-nums">
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">STATE N (CODEPOINT)</span>
+          <span className="text-xs text-[#38bdf8] font-bold">
+            {data.n} (0x{data.n.toString(16).toUpperCase()})
+          </span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">DELTA (WEIGHT)</span>
+          <span className="text-xs text-[#34d399] font-bold">{data.delta}</span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">ADAPTED BIAS</span>
+          <span className="text-xs text-[#e5a93b] font-bold phosphor-amber">{data.bias}</span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">ACTIVE GLYPH</span>
+          <span className="text-xs text-[#f8fafc] font-bold">
+            {data.activeChar ? `'${data.activeChar}' (U+${data.activeCodePoint?.toString(16).toUpperCase()})` : '(BASIC SETUP)'}
+          </span>
+        </div>
+      </div>
+
+      {/* Basic Prefix & Non-Basic Set */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <DataRow
+          label="BASIC ASCII PREFIX (LITERALS)"
+          value={data.basicString || '(NONE)'}
+          type="text"
+        />
+        <DataRow
+          label="NON-ASCII CODE POINT POOL"
+          value={data.nonBasicChars?.length > 0 ? data.nonBasicChars.join(' ') : '(NONE)'}
+          type="hex"
+        />
+      </div>
+
+      {/* Cumulative Output */}
+      <DataRow
+        label={`CUMULATIVE ${data.operation.toUpperCase()} OUTPUT`}
+        value={data.accumulatedOutput || '(EMPTY)'}
+        type="text"
+      />
+    </div>
+  );
+}
+
+function MorseTimelineView({
+  data,
+}: {
+  data: {
+    encodingType: 'Morse';
+    operation: 'encode' | 'decode';
+    char: string;
+    morsePattern: string;
+    elements: Array<{ symbol: '.' | '-' | 'gap' | 'word-gap'; label: string; durationUnits: number }>;
+    accumulatedOutput: string;
+    charIndex: number;
+    totalChars: number;
+  };
+}) {
+  return (
+    <div className="space-y-3 rounded-[2px] bg-[#0c1017] p-3 border border-[#1f2937] font-mono">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-1.5 border-b border-[#1f2937]">
+        <div className="flex items-center gap-2">
+          <span className="rounded-[2px] bg-[#152238] px-1.5 py-0.5 text-[9px] font-bold text-[#38bdf8] border border-[#38bdf8]/40 uppercase">
+            {data.encodingType} {data.operation.toUpperCase()}
+          </span>
+          <span className="text-[10px] text-[#cbd5e1] font-semibold">
+            CHAR #{data.charIndex} OF {data.totalChars}
+          </span>
+        </div>
+        <span className="text-[9px] text-[#64748b] uppercase">
+          ITU-R M.1677-1 INTERNATIONAL MORSE
+        </span>
+      </div>
+
+      {/* Character Inspection & Pattern */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="flex items-center gap-3 rounded-[2px] bg-[#0e131b] p-2 border border-[#1f2937]">
+          <div className="flex items-center justify-center w-10 h-10 rounded-[2px] bg-[#152238] border border-[#38bdf8]/40 text-lg font-bold text-[#38bdf8]">
+            {data.char}
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[9px] text-[#64748b] font-bold">ACTIVE CHARACTER</span>
+            <span className="text-sm text-[#e5a93b] font-bold phosphor-amber">
+              {data.morsePattern}
+            </span>
+          </div>
+        </div>
+
+        <DataRow
+          label="TIMING & MODULATION"
+          value={data.elements.map((e) => `${e.label} (${e.durationUnits}u)`).join(' + ') || '(SPACE)'}
+          type="text"
+        />
+      </div>
+
+      {/* Visual Timeline Ribbon */}
+      <div className="space-y-1">
+        <span className="text-[9px] font-bold uppercase tracking-wider text-[#64748b]">
+          ACOUSTIC / OPTICAL PULSE TIMELINE
+        </span>
+        <div className="flex items-center gap-1.5 p-3 rounded-[2px] bg-[#0e131b] border border-[#1f2937] overflow-x-auto">
+          {data.elements.map((elem, idx) => (
+            <div key={idx} className="flex flex-col items-center gap-1">
+              <div
+                className={`h-6 rounded-[1px] border flex items-center justify-center ${
+                  elem.symbol === '.'
+                    ? 'w-6 bg-[#e5a93b]/20 border-[#e5a93b] text-[#e5a93b]'
+                    : elem.symbol === '-'
+                      ? 'w-16 bg-[#38bdf8]/20 border-[#38bdf8] text-[#38bdf8]'
+                      : 'w-4 bg-transparent border-dashed border-[#374151]'
+                }`}
+              >
+                <span className="text-xs font-bold">{elem.symbol}</span>
+              </div>
+              <span className="text-[8px] text-[#64748b]">{elem.durationUnits}u</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Cumulative Output */}
+      <DataRow
+        label={`CUMULATIVE ${data.operation.toUpperCase()} STREAM`}
+        value={data.accumulatedOutput || '(EMPTY)'}
+        type="text"
+      />
+    </div>
+  );
+}
+
+function JwtTokenView({
+  data,
+}: {
+  data: {
+    encodingType: 'JWT';
+    operation: 'encode' | 'decode';
+    headerJson: string;
+    headerB64: string;
+    payloadJson: string;
+    payloadB64: string;
+    signatureB64: string;
+    algorithm: string;
+    secretKey: string;
+    signingInput: string;
+    computedSignatureB64?: string;
+    isSignatureValid?: boolean;
+  };
+}) {
+  return (
+    <div className="space-y-3 rounded-[2px] bg-[#0c1017] p-3 border border-[#1f2937] font-mono">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-1.5 border-b border-[#1f2937]">
+        <div className="flex items-center gap-2">
+          <span className="rounded-[2px] bg-[#152238] px-1.5 py-0.5 text-[9px] font-bold text-[#38bdf8] border border-[#38bdf8]/40 uppercase">
+            {data.encodingType} {data.algorithm} {data.operation.toUpperCase()}
+          </span>
+          {data.isSignatureValid !== undefined && (
+            <span
+              className={`rounded-[2px] px-1.5 py-0.5 text-[9px] font-bold border uppercase ${
+                data.isSignatureValid
+                  ? 'bg-[#0f291e] text-[#34d399] border-[#34d399]/40'
+                  : 'bg-[#2a1318] text-[#f87171] border-[#f87171]/40'
+              }`}
+            >
+              {data.isSignatureValid ? 'SIGNATURE VALID (MATCH)' : 'SIGNATURE MISMATCH'}
+            </span>
+          )}
+        </div>
+        <span className="text-[9px] text-[#64748b] uppercase">RFC 7519 STRUCTURED TOKEN</span>
+      </div>
+
+      {/* 3 Color-Coded Segments */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        {/* Segment 1: Header */}
+        <div className="space-y-1 p-2 rounded-[2px] bg-[#0e141f] border border-[#38bdf8]/30">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#38bdf8]">
+              1. HEADER (BASE64URL)
+            </span>
+            <span className="text-[8px] text-[#64748b]">{data.algorithm}</span>
+          </div>
+          <div className="text-[10px] text-[#38bdf8] font-bold break-all bg-[#090c10] p-1.5 rounded-[2px] border border-[#1f2937]">
+            {data.headerB64 || '(EMPTY)'}
+          </div>
+          <div className="text-[9.5px] text-[#94a3b8] break-all bg-[#090c10] p-1.5 rounded-[2px] border border-[#1f2937]">
+            {data.headerJson}
+          </div>
+        </div>
+
+        {/* Segment 2: Payload */}
+        <div className="space-y-1 p-2 rounded-[2px] bg-[#171224] border border-[#c084fc]/30">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#c084fc]">
+              2. PAYLOAD (CLAIMS)
+            </span>
+            <span className="text-[8px] text-[#64748b]">JSON</span>
+          </div>
+          <div className="text-[10px] text-[#c084fc] font-bold break-all bg-[#090c10] p-1.5 rounded-[2px] border border-[#1f2937]">
+            {data.payloadB64 || '(EMPTY)'}
+          </div>
+          <div className="text-[9.5px] text-[#94a3b8] break-all bg-[#090c10] p-1.5 rounded-[2px] border border-[#1f2937]">
+            {data.payloadJson}
+          </div>
+        </div>
+
+        {/* Segment 3: Signature */}
+        <div
+          className={`space-y-1 p-2 rounded-[2px] border ${
+            data.isSignatureValid
+              ? 'bg-[#0c1813] border-[#34d399]/30'
+              : 'bg-[#1c140d] border-[#e5a93b]/30'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span
+              className={`text-[9px] font-bold uppercase tracking-wider ${
+                data.isSignatureValid ? 'text-[#34d399]' : 'text-[#e5a93b]'
+              }`}
+            >
+              3. SIGNATURE (HMAC)
+            </span>
+            <span className="text-[8px] text-[#64748b]">MAC</span>
+          </div>
+          <div
+            className={`text-[10px] font-bold break-all bg-[#090c10] p-1.5 rounded-[2px] border border-[#1f2937] ${
+              data.isSignatureValid ? 'text-[#34d399]' : 'text-[#e5a93b]'
+            }`}
+          >
+            {data.signatureB64 || '(NONE)'}
+          </div>
+          {data.computedSignatureB64 && (
+            <div className="text-[8.5px] text-[#64748b]">
+              RECOMPUTED: <span className="text-[#34d399]">{data.computedSignatureB64}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Secret Key & Signing Input */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <DataRow
+          label="SIGNING INPUT (HEADER.PAYLOAD)"
+          value={data.signingInput || '(NONE)'}
+          type="text"
+        />
+        <DataRow
+          label="HMAC SHARED SECRET KEY"
+          value={data.secretKey ? `"${data.secretKey}"` : '(DEFAULT)'}
+          type="hex"
+        />
+      </div>
     </div>
   );
 }

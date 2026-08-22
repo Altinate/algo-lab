@@ -142,7 +142,7 @@ export default function App() {
               }`}
             >
               <span>🔤</span>
-              <span>ENCODING (16)</span>
+              <span>ENCODING (28)</span>
             </button>
           </div>
         </div>

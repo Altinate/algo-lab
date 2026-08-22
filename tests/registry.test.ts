@@ -171,9 +171,9 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('ML-DSA-87 (Verify)');
   });
 
-  it('registers all 16 built-in encoding algorithms', () => {
+  it('registers all 28 built-in encoding algorithms', () => {
     const algorithms = listAlgorithms('encoding');
-    expect(algorithms.length).toBe(16);
+    expect(algorithms.length).toBe(28);
 
     const names = algorithms.map((a) => a.info.name);
 
@@ -188,6 +188,10 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('Base16 / Hex (Decode)');
     expect(names).toContain('Base58 (Encode)');
     expect(names).toContain('Base58 (Decode)');
+    expect(names).toContain('Base85 / ASCII85 (Encode)');
+    expect(names).toContain('Base85 / ASCII85 (Decode)');
+    expect(names).toContain('Base36 (Encode)');
+    expect(names).toContain('Base36 (Decode)');
 
     // Text/Character Encoding
     expect(names).toContain('URL / Percent-Encoding (Encode)');
@@ -196,11 +200,23 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('UTF-8 (Decode)');
     expect(names).toContain('UTF-16 (Encode)');
     expect(names).toContain('UTF-16 (Decode)');
+    expect(names).toContain('Punycode (Encode)');
+    expect(names).toContain('Punycode (Decode)');
+    expect(names).toContain('Quoted-Printable (Encode)');
+    expect(names).toContain('Quoted-Printable (Decode)');
+
+    // Signal/Historical Encoding
+    expect(names).toContain('Morse Code (Encode)');
+    expect(names).toContain('Morse Code (Decode)');
+
+    // Structured Token
+    expect(names).toContain('JWT (Encode)');
+    expect(names).toContain('JWT (Decode)');
   });
 
   it('can look up every algorithm by name across all categories', () => {
     const algorithms = listAlgorithms();
-    expect(algorithms.length).toBe(117);
+    expect(algorithms.length).toBe(129);
     for (const algo of algorithms) {
       const retrieved = getAlgorithm(algo.info.name);
       expect(retrieved).toBeDefined();
@@ -243,6 +259,8 @@ describe('Algorithm Registry', () => {
     const encFamilies = getAlgorithmsByFamily('encoding');
     expect(encFamilies.has('Positional/Radix Encoding')).toBe(true);
     expect(encFamilies.has('Text/Character Encoding')).toBe(true);
+    expect(encFamilies.has('Signal/Historical Encoding')).toBe(true);
+    expect(encFamilies.has('Structured Token')).toBe(true);
   });
 
   it('computes hash/cipher and steps for all registered algorithms', () => {

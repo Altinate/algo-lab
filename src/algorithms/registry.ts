@@ -214,6 +214,8 @@ export function getAlgorithmsByFamily(category: AlgorithmCategory = 'hash'): Map
   const encodingFamilyOrder = [
     'Positional/Radix Encoding',
     'Text/Character Encoding',
+    'Signal/Historical Encoding',
+    'Structured Token',
   ];
 
   const familyOrder =

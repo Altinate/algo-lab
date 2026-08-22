@@ -121,6 +121,11 @@ export default function BinaryTransformView({ step }: Props) {
     return <ScryptTransformView data={data.scrypt as any} />;
   }
 
+  // Argon2id step (RFC 9106)
+  if (data.argon2id) {
+    return <Argon2idTransformView data={data.argon2id as any} />;
+  }
+
   // Fallback
   return <FallbackDataView data={data} />;
 }
@@ -976,6 +981,186 @@ function ScryptTransformView({
           </div>
           <div className="text-xs text-[#34d399] font-bold break-all bg-[#090c10] p-2 rounded-[2px] border border-[#1f2937] tabular-nums select-all">
             0x{data.derivedKeyHex}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Argon2idTransformView({
+  data,
+}: {
+  data: {
+    toolType: 'Argon2id';
+    password: string;
+    salt: string;
+    secretKey?: string;
+    associatedData?: string;
+    m: number;
+    t: number;
+    p: number;
+    tagLength: number;
+    version: number;
+    totalBlocks: number;
+    totalComputedBlocks: number;
+    currentPass?: number;
+    currentSlice?: number;
+    currentLane?: number;
+    currentColumn?: number;
+    addressingMode?: string;
+    refLane?: number;
+    refColumn?: number;
+    h0Hex?: string;
+    activeBlockHexSnippet?: string;
+    finalBlockHexSnippet?: string;
+    derivedTagHex?: string;
+    progressPercent: number;
+    phaseName: string;
+    isSummary?: boolean;
+  };
+}) {
+  const pct = data.progressPercent ?? 0;
+
+  return (
+    <div className="space-y-3 rounded-[2px] bg-[#0c1017] p-3 border border-[#1f2937] font-mono">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-1.5 border-b border-[#1f2937]">
+        <div className="flex items-center gap-2">
+          <span className="rounded-[2px] bg-[#1c1424] px-1.5 py-0.5 text-[9px] font-bold text-[#c084fc] border border-[#c084fc]/40 uppercase">
+            ARGON2ID HYBRID KDF (RFC 9106)
+          </span>
+          <span className="text-[10px] text-[#cbd5e1] font-semibold">
+            {data.phaseName}
+          </span>
+        </div>
+        <span className="text-[9px] text-[#64748b] uppercase">
+          BLAKE2B 8×8 MATRIX ENGINE (v{data.version})
+        </span>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-[9px]">
+          <span className="text-[#64748b] font-bold">
+            MATRIX PIPELINE PROGRESS {data.isSummary ? `(PASS ${data.currentPass}/${data.t}, SLICE ${data.currentSlice}/4)` : ''}
+          </span>
+          <span className="text-[#c084fc] font-bold">{pct}%</span>
+        </div>
+        <div className="w-full h-1.5 bg-[#090c10] rounded-[1px] border border-[#1f2937] overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-[#c084fc] via-[#38bdf8] to-[#34d399] transition-all duration-300"
+            style={{ width: `${Math.min(100, Math.max(2, pct))}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Memory & Matrix Parameters Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 tabular-nums">
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">MEMORY COST m</span>
+          <span className="text-xs text-[#38bdf8] font-bold">
+            {data.m} KiB ({data.totalBlocks} BLOCKS OF 1KB)
+          </span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">TIME COST t</span>
+          <span className="text-xs text-[#34d399] font-bold">
+            {data.t} PASS{data.t > 1 ? 'ES' : ''} ({data.totalComputedBlocks} BLOCKS)
+          </span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">PARALLELISM p</span>
+          <span className="text-xs text-[#f8fafc] font-bold">
+            {data.p} LANES ({data.totalBlocks / data.p} COLS/LANE)
+          </span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">TAG LENGTH T</span>
+          <span className="text-xs text-[#e5a93b] font-bold phosphor-amber">
+            {data.tagLength} BYTES ({data.tagLength * 8} BITS)
+          </span>
+        </div>
+      </div>
+
+      {/* Addressing Mode & References Card */}
+      {data.addressingMode && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="flex flex-col p-2 rounded-[2px] bg-[#0e141f] border border-[#38bdf8]/30">
+            <span className="text-[9px] text-[#64748b] font-bold">HYBRID ADDRESSING MODE</span>
+            <span className="text-xs text-[#38bdf8] font-bold">
+              {data.addressingMode}
+            </span>
+          </div>
+          <div className="flex flex-col p-2 rounded-[2px] bg-[#1c1424] border border-[#c084fc]/30">
+            <span className="text-[9px] text-[#64748b] font-bold">REFERENCED MEMORY COORD</span>
+            <span className="text-xs text-[#c084fc] font-bold">
+              B[LANE {data.refLane ?? 0}][COL {data.refColumn ?? 0}]
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Initial H0 / Block Snippets */}
+      {(data.h0Hex || data.activeBlockHexSnippet || data.finalBlockHexSnippet) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {data.h0Hex && (
+            <div className="space-y-1 p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[#64748b]">
+                  INITIAL H₀ PRE-HASH (64 BYTES)
+                </span>
+                <span className="text-[8px] text-[#64748b]">BLAKE2b</span>
+              </div>
+              <div className="text-[10px] text-[#cbd5e1] font-bold break-all bg-[#090c10] p-1.5 rounded-[2px] border border-[#1f2937] tabular-nums">
+                0x{data.h0Hex}
+              </div>
+            </div>
+          )}
+
+          {data.activeBlockHexSnippet && (
+            <div className="space-y-1 p-2 rounded-[2px] bg-[#0e141f] border border-[#38bdf8]/30">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[#38bdf8]">
+                  ACTIVE 1024-BYTE BLOCK G(X, Y)
+                </span>
+                <span className="text-[8px] text-[#64748b]">8×8 ARX ROUNDS</span>
+              </div>
+              <div className="text-[10px] text-[#38bdf8] font-bold break-all bg-[#090c10] p-1.5 rounded-[2px] border border-[#1f2937] tabular-nums">
+                0x{data.activeBlockHexSnippet}...
+              </div>
+            </div>
+          )}
+
+          {data.finalBlockHexSnippet && !data.activeBlockHexSnippet && (
+            <div className="space-y-1 p-2 rounded-[2px] bg-[#1c1424] border border-[#c084fc]/30">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[#c084fc]">
+                  FINAL FOLDED BLOCK B_FINAL
+                </span>
+                <span className="text-[8px] text-[#64748b]">⨁ B[LANE][LAST]</span>
+              </div>
+              <div className="text-[10px] text-[#c084fc] font-bold break-all bg-[#090c10] p-1.5 rounded-[2px] border border-[#1f2937] tabular-nums">
+                0x{data.finalBlockHexSnippet}...
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Derived Tag Result (When Complete) */}
+      {data.derivedTagHex && (
+        <div className="space-y-1 p-2.5 rounded-[2px] bg-[#0c1813] border border-[#34d399]/40">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#34d399]">
+              FINAL ARGON2ID DERIVED TAG — {data.tagLength * 8} BITS
+            </span>
+            <span className="rounded-[2px] bg-[#0f291e] px-1.5 py-0.2 text-[8.5px] font-bold text-[#34d399] border border-[#34d399]/40">
+              PHC WINNER STANDARD
+            </span>
+          </div>
+          <div className="text-xs text-[#34d399] font-bold break-all bg-[#090c10] p-2 rounded-[2px] border border-[#1f2937] tabular-nums select-all">
+            0x{data.derivedTagHex}
           </div>
         </div>
       )}

@@ -216,7 +216,7 @@ describe('Algorithm Registry', () => {
 
   it('can look up every algorithm by name across all categories', () => {
     const algorithms = listAlgorithms();
-    expect(algorithms.length).toBe(131);
+    expect(algorithms.length).toBe(132);
     for (const algo of algorithms) {
       const retrieved = getAlgorithm(algo.info.name);
       expect(retrieved).toBeDefined();

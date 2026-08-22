@@ -36,30 +36,31 @@ describe('RSA Cryptosystem (NIST SP 800-56B Rev 2 / PKCS#1 v2.2)', () => {
   });
 
   it('RSA-2048: Verified bit-for-bit against standard OpenSSL / NIST CAVP PKCS#1 v1.5 implementation', async () => {
-    const crypto = await import('crypto');
+    // @ts-ignore
+    const nodeCrypto = await import('node:crypto');
     const { NIST_RSA_2048 } = await import('../../src/algorithms/asymmetric/rsa/constants');
     const message = 'CryptoScope Secure Audit Document';
-    const msgBuf = Buffer.from(message, 'utf8');
+    const msgBuf = (globalThis as any).Buffer.from(message, 'utf8');
 
     const jwk = {
       kty: 'RSA',
-      n: Buffer.from(NIST_RSA_2048.n.toString(16).padStart(512, '0'), 'hex').toString('base64url'),
-      e: Buffer.from('010001', 'hex').toString('base64url'),
-      d: Buffer.from(NIST_RSA_2048.d.toString(16).padStart(512, '0'), 'hex').toString('base64url'),
-      p: Buffer.from(NIST_RSA_2048.p.toString(16).padStart(256, '0'), 'hex').toString('base64url'),
-      q: Buffer.from(NIST_RSA_2048.q.toString(16).padStart(256, '0'), 'hex').toString('base64url'),
-      dp: Buffer.from(NIST_RSA_2048.dP.toString(16).padStart(256, '0'), 'hex').toString('base64url'),
-      dq: Buffer.from(NIST_RSA_2048.dQ.toString(16).padStart(256, '0'), 'hex').toString('base64url'),
-      qi: Buffer.from(NIST_RSA_2048.qInv.toString(16).padStart(256, '0'), 'hex').toString('base64url'),
+      n: (globalThis as any).Buffer.from(NIST_RSA_2048.n.toString(16).padStart(512, '0'), 'hex').toString('base64url'),
+      e: (globalThis as any).Buffer.from('010001', 'hex').toString('base64url'),
+      d: (globalThis as any).Buffer.from(NIST_RSA_2048.d.toString(16).padStart(512, '0'), 'hex').toString('base64url'),
+      p: (globalThis as any).Buffer.from(NIST_RSA_2048.p.toString(16).padStart(256, '0'), 'hex').toString('base64url'),
+      q: (globalThis as any).Buffer.from(NIST_RSA_2048.q.toString(16).padStart(256, '0'), 'hex').toString('base64url'),
+      dp: (globalThis as any).Buffer.from(NIST_RSA_2048.dP.toString(16).padStart(256, '0'), 'hex').toString('base64url'),
+      dq: (globalThis as any).Buffer.from(NIST_RSA_2048.dQ.toString(16).padStart(256, '0'), 'hex').toString('base64url'),
+      qi: (globalThis as any).Buffer.from(NIST_RSA_2048.qInv.toString(16).padStart(256, '0'), 'hex').toString('base64url'),
     };
 
-    const nodePrivKey = crypto.createPrivateKey({ key: jwk as any, format: 'jwk' });
-    const nodePubKey = crypto.createPublicKey({ key: jwk as any, format: 'jwk' });
+    const nodePrivKey = nodeCrypto.createPrivateKey({ key: jwk, format: 'jwk' });
+    const nodePubKey = nodeCrypto.createPublicKey({ key: jwk, format: 'jwk' });
 
     // OpenSSL generates signature
-    const openSslSig = crypto.sign('sha256', msgBuf, {
+    const openSslSig = nodeCrypto.sign('sha256', msgBuf, {
       key: nodePrivKey,
-      padding: crypto.constants.RSA_PKCS1_PADDING,
+      padding: nodeCrypto.constants.RSA_PKCS1_PADDING,
     });
 
     const cryptoScopeSig = rsa2048Sign.compute(message);
@@ -68,11 +69,11 @@ describe('RSA Cryptosystem (NIST SP 800-56B Rev 2 / PKCS#1 v2.2)', () => {
     expect(cryptoScopeSig.digest).toBe(openSslSig.toString('hex'));
 
     // 2. OpenSSL verifies CryptoScope signature
-    const openSslVerifies = crypto.verify(
+    const openSslVerifies = nodeCrypto.verify(
       'sha256',
       msgBuf,
-      { key: nodePubKey, padding: crypto.constants.RSA_PKCS1_PADDING },
-      Buffer.from(cryptoScopeSig.digest, 'hex')
+      { key: nodePubKey, padding: nodeCrypto.constants.RSA_PKCS1_PADDING },
+      (globalThis as any).Buffer.from(cryptoScopeSig.digest, 'hex')
     );
     expect(openSslVerifies).toBe(true);
 

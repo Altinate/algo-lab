@@ -171,9 +171,36 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('ML-DSA-87 (Verify)');
   });
 
+  it('registers all 16 built-in encoding algorithms', () => {
+    const algorithms = listAlgorithms('encoding');
+    expect(algorithms.length).toBe(16);
+
+    const names = algorithms.map((a) => a.info.name);
+
+    // Positional/Radix Encoding
+    expect(names).toContain('Base64 (Encode)');
+    expect(names).toContain('Base64 (Decode)');
+    expect(names).toContain('Base64URL (Encode)');
+    expect(names).toContain('Base64URL (Decode)');
+    expect(names).toContain('Base32 (Encode)');
+    expect(names).toContain('Base32 (Decode)');
+    expect(names).toContain('Base16 / Hex (Encode)');
+    expect(names).toContain('Base16 / Hex (Decode)');
+    expect(names).toContain('Base58 (Encode)');
+    expect(names).toContain('Base58 (Decode)');
+
+    // Text/Character Encoding
+    expect(names).toContain('URL / Percent-Encoding (Encode)');
+    expect(names).toContain('URL / Percent-Encoding (Decode)');
+    expect(names).toContain('UTF-8 (Encode)');
+    expect(names).toContain('UTF-8 (Decode)');
+    expect(names).toContain('UTF-16 (Encode)');
+    expect(names).toContain('UTF-16 (Decode)');
+  });
+
   it('can look up every algorithm by name across all categories', () => {
     const algorithms = listAlgorithms();
-    expect(algorithms.length).toBe(101);
+    expect(algorithms.length).toBe(117);
     for (const algo of algorithms) {
       const retrieved = getAlgorithm(algo.info.name);
       expect(retrieved).toBeDefined();
@@ -181,7 +208,7 @@ describe('Algorithm Registry', () => {
     }
   });
 
-  it('groups algorithms by family correctly for hash, symmetric, asymmetric, and pqc categories', () => {
+  it('groups algorithms by family correctly for hash, symmetric, asymmetric, pqc, and encoding categories', () => {
     const hashFamilies = getAlgorithmsByFamily('hash');
     expect(hashFamilies.has('MD')).toBe(true);
     expect(hashFamilies.has('SHA-1')).toBe(true);
@@ -212,6 +239,10 @@ describe('Algorithm Registry', () => {
     const pqcFamilies = getAlgorithmsByFamily('pqc');
     expect(pqcFamilies.has('ML-KEM (Kyber)')).toBe(true);
     expect(pqcFamilies.has('ML-DSA (Dilithium)')).toBe(true);
+
+    const encFamilies = getAlgorithmsByFamily('encoding');
+    expect(encFamilies.has('Positional/Radix Encoding')).toBe(true);
+    expect(encFamilies.has('Text/Character Encoding')).toBe(true);
   });
 
   it('computes hash/cipher and steps for all registered algorithms', () => {

@@ -74,6 +74,15 @@ export function useHashEngine(): HashEngineState {
       setInput('Hello, CryptoScope AES-128-CBC!');
       setKeyHex('2b7e151628aed2a6abf7158809cf4f3c');
       setIvHex('000102030405060708090a0b0c0d0e0f');
+    } else if (cat === 'asymmetric') {
+      setAlgorithmName('RSA-2048 (Encrypt)');
+      setInput('Hello, RSA-2048!');
+    } else if (cat === 'pqc') {
+      setAlgorithmName('ML-KEM-768 (Encapsulate)');
+      setInput('');
+    } else if (cat === 'encoding') {
+      setAlgorithmName('Base64 (Encode)');
+      setInput('Hello, World!');
     }
   }, []);
 

@@ -24,7 +24,7 @@ export interface ComputationStep {
   visualizationType: VisualizationType;
 }
 
-export type AlgorithmCategory = 'hash' | 'symmetric' | 'asymmetric' | 'pqc';
+export type AlgorithmCategory = 'hash' | 'symmetric' | 'asymmetric' | 'pqc' | 'encoding';
 
 export type VisualizationType =
   | 'binary-transform'    // Show binary/hex before→after (padding, chunking)

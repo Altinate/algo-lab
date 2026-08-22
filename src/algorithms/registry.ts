@@ -73,6 +73,9 @@ import { dhPlugins } from './asymmetric/dh';
 import { mlKemPlugins } from './pqc/ml-kem';
 import { mlDsaPlugins } from './pqc/ml-dsa';
 
+// Encoding Algorithms (Base64, Base32, Base16, Base58, URL, UTF-8, UTF-16)
+import { encodingPlugins } from './encoding';
+
 import type { AlgorithmCategory } from './types';
 
 const registry = new Map<string, AlgorithmPlugin>();
@@ -154,6 +157,9 @@ dhPlugins.forEach(register);
 mlKemPlugins.forEach(register);
 mlDsaPlugins.forEach(register);
 
+// Register all Encoding Plugins (16 algorithms across 2 families)
+encodingPlugins.forEach(register);
+
 /** Get an algorithm plugin by name */
 export function getAlgorithm(name: string): AlgorithmPlugin | undefined {
   return registry.get(name);
@@ -205,6 +211,11 @@ export function getAlgorithmsByFamily(category: AlgorithmCategory = 'hash'): Map
     'ML-DSA (Dilithium)',
   ];
 
+  const encodingFamilyOrder = [
+    'Positional/Radix Encoding',
+    'Text/Character Encoding',
+  ];
+
   const familyOrder =
     category === 'symmetric'
       ? symmetricFamilyOrder
@@ -212,6 +223,8 @@ export function getAlgorithmsByFamily(category: AlgorithmCategory = 'hash'): Map
       ? asymmetricFamilyOrder
       : category === 'pqc'
       ? pqcFamilyOrder
+      : category === 'encoding'
+      ? encodingFamilyOrder
       : hashFamilyOrder;
 
   for (const family of familyOrder) {

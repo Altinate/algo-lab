@@ -8,6 +8,16 @@ export function stringToBytes(str: string): Uint8Array {
   return new TextEncoder().encode(str);
 }
 
+/** Convert a byte array to a UTF-8 string */
+export function bytesToString(bytes: Uint8Array | number[]): string {
+  try {
+    const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    return new TextDecoder('utf-8', { fatal: false }).decode(u8);
+  } catch {
+    return '';
+  }
+}
+
 /** Convert a byte array to a hex string */
 export function bytesToHex(bytes: Uint8Array | number[]): string {
   return Array.from(bytes)

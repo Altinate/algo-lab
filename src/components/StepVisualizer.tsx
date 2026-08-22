@@ -7,6 +7,7 @@ import MerkleTreeView from './visualizations/MerkleTreeView';
 import MixingFunctionView from './visualizations/MixingFunctionView';
 import FinalDigestView from './visualizations/FinalDigestView';
 import GenericStepView from './visualizations/GenericStepView';
+import AesStateMatrixView from './visualizations/AesStateMatrixView';
 
 interface StepVisualizerProps {
   step: ComputationStep | null;
@@ -37,6 +38,8 @@ export default function StepVisualizer({
         return <RoundComputationView step={step} />;
       case 'state-matrix':
         return <StateMatrixView step={step} />;
+      case 'aes-state-matrix':
+        return <AesStateMatrixView step={step} />;
       case 'xor-table':
         return <XorTableView step={step} />;
       case 'merkle-tree':

@@ -25,8 +25,9 @@ This tool turns abstract cryptographic specifications (NIST FIPS 180-4, NIST FIP
 
 ---
 
-## ✨ Supported Algorithms (34 Algorithms across 11 Families)
+## ✨ Supported Algorithms (56 Algorithms across 15 Families)
 
+### ⌗ Hash Functions (34 Algorithms across 11 Families)
 - **Legacy MD Family** (RFC 1319, RFC 1320, RFC 1321):
   - `MD2` (128-bit checksum byte substitution & 18-round permutation)
   - `MD4` (128-bit 3-round ARX compression)
@@ -78,16 +79,40 @@ This tool turns abstract cryptographic specifications (NIST FIPS 180-4, NIST FIP
 - **Cipher-Based Hash Structures**:
   - `Whirlpool` (ISO/IEC 10118-3 / Barreto-Rijmen 512-bit Miyaguchi-Preneel hash with 10-round AES-like $8 \times 8$ byte state transformations)
 
+### 🔒 Symmetric Ciphers (22 Algorithms across 4 Families)
+- **AES-128 Family** (NIST FIPS 197 & NIST SP 800-38A):
+  - `AES-128-ECB` (Encrypt & Decrypt)
+  - `AES-128-CBC` (Encrypt & Decrypt)
+  - `AES-128-CTR` (Encrypt & Decrypt)
+
+- **AES-192 Family** (NIST FIPS 197 & NIST SP 800-38A):
+  - `AES-192-ECB` (Encrypt & Decrypt)
+  - `AES-192-CBC` (Encrypt & Decrypt)
+  - `AES-192-CTR` (Encrypt & Decrypt)
+
+- **AES-256 Family** (NIST FIPS 197 & NIST SP 800-38A):
+  - `AES-256-ECB` (Encrypt & Decrypt)
+  - `AES-256-CBC` (Encrypt & Decrypt)
+  - `AES-256-CTR` (Encrypt & Decrypt)
+
+- **AES-GCM (AEAD) Family** (NIST SP 800-38D):
+  - `AES-128-GCM` (Encrypt & Decrypt with GHASH $GF(2^{128})$ authentication tag verification)
+  - `AES-256-GCM` (Encrypt & Decrypt with GHASH $GF(2^{128})$ authentication tag verification)
+
 ---
 
 ## 🔬 Dedicated Hardware Telemetry Visualizers
 
+- **AES $4 \times 4$ State Matrix Inspector (`AesStateMatrixView`)**:
+  - Step-by-step block cipher transformation telemetry: **SubBytes**, **ShiftRows**, **MixColumns**, **AddRoundKey**, and their exact inverses (**InvShiftRows**, **InvSubBytes**, **InvMixColumns**), with 4x4 matrix difference highlighting, row shift offsets, and Galois field matrix constants.
 - **3-Bus Logic Analyzer (`RoundComputationView`)**:
   - Persistent 3-column instrument with Message Buffer ($W$), Hardware ALU + Dynamic Register Bank ($A..H$ or Left/Right dual registers), and Firmware ROM Constants Table ($K$).
 - **$5 \times 5$ / $8 \times 8$ State Matrix Inspector (`StateMatrixView`)**:
   - Fluid 1600-bit Keccak state matrix and 512-bit Whirlpool matrix with 64-bit hex lane display, lane diff highlights, and sponge phase tracking.
 - **$4 \times 4$ ARX Mixing Matrix (`MixingFunctionView`)**:
   - 16-word work state with column and diagonal $G$-mixing operation cards and $\Sigma$ message permutation telemetry.
+- **Polynomial Stream Engine (`XorTableView`)**:
+  - 5-step FCS-32 and CRC-16 register transformation pipeline with an active 256-entry polynomial ROM table.
 - **Polynomial Stream Engine (`XorTableView`)**:
   - 5-step FCS-32 and CRC-16 register transformation pipeline with an active 256-entry polynomial ROM table.
 

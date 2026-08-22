@@ -59,6 +59,11 @@ import sm3Plugin from './sm3';
 // Cipher-Based Hash
 import whirlpoolPlugin from './whirlpool';
 
+// Symmetric Ciphers (AES 128/192/256 ECB/CBC/CTR/GCM)
+import { aesPlugins } from './symmetric/aes';
+
+import type { AlgorithmCategory } from './types';
+
 const registry = new Map<string, AlgorithmPlugin>();
 
 function register(plugin: AlgorithmPlugin) {
@@ -67,7 +72,7 @@ function register(plugin: AlgorithmPlugin) {
   }
 }
 
-// Register all algorithms (34 algorithms across 11 families)
+// Register all Hash algorithms (34 algorithms across 11 families)
 [
   // Legacy MD
   md2Plugin,
@@ -124,20 +129,26 @@ function register(plugin: AlgorithmPlugin) {
   whirlpoolPlugin,
 ].forEach(register);
 
+// Register all Symmetric Ciphers (22 algorithms across 4 families)
+aesPlugins.forEach(register);
+
 /** Get an algorithm plugin by name */
 export function getAlgorithm(name: string): AlgorithmPlugin | undefined {
   return registry.get(name);
 }
 
-/** List all registered algorithm plugins */
-export function listAlgorithms(): AlgorithmPlugin[] {
-  return Array.from(registry.values());
+/** List all registered algorithm plugins, optionally filtered by category */
+export function listAlgorithms(category?: AlgorithmCategory): AlgorithmPlugin[] {
+  const all = Array.from(registry.values());
+  if (!category) return all;
+  return all.filter((p) => (p.info.category || 'hash') === category);
 }
 
-/** Get algorithms grouped by family */
-export function getAlgorithmsByFamily(): Map<string, AlgorithmPlugin[]> {
+/** Get algorithms grouped by family for a specific category (default: 'hash') */
+export function getAlgorithmsByFamily(category: AlgorithmCategory = 'hash'): Map<string, AlgorithmPlugin[]> {
   const families = new Map<string, AlgorithmPlugin[]>();
-  const familyOrder = [
+  
+  const hashFamilyOrder = [
     'MD',
     'SHA-1',
     'SHA-2',
@@ -151,11 +162,41 @@ export function getAlgorithmsByFamily(): Map<string, AlgorithmPlugin[]> {
     'Cipher-Based',
   ];
 
+  const symmetricFamilyOrder = [
+    'AES-128',
+    'AES-192',
+    'AES-256',
+    'AES-GCM (AEAD)',
+  ];
+
+  const asymmetricFamilyOrder = [
+    'RSA Cryptosystem',
+    'Elliptic Curve (ECDSA)',
+    'Diffie-Hellman Key Exchange',
+  ];
+
+  const pqcFamilyOrder = [
+    'ML-KEM (Kyber)',
+    'ML-DSA (Dilithium)',
+  ];
+
+  const familyOrder =
+    category === 'symmetric'
+      ? symmetricFamilyOrder
+      : category === 'asymmetric'
+      ? asymmetricFamilyOrder
+      : category === 'pqc'
+      ? pqcFamilyOrder
+      : hashFamilyOrder;
+
   for (const family of familyOrder) {
     families.set(family, []);
   }
 
   for (const plugin of registry.values()) {
+    const pluginCategory = plugin.info.category || 'hash';
+    if (pluginCategory !== category) continue;
+
     const family = plugin.info.family;
     if (!families.has(family)) {
       families.set(family, []);
@@ -172,3 +213,4 @@ export function getAlgorithmsByFamily(): Map<string, AlgorithmPlugin[]> {
 
   return families;
 }
+

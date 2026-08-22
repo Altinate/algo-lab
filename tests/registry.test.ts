@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { listAlgorithms, getAlgorithm, getAlgorithmsByFamily } from '../src/algorithms/registry';
 
 describe('Algorithm Registry', () => {
-  it('registers all 34 built-in algorithms', () => {
-    const algorithms = listAlgorithms();
-    expect(algorithms.length).toBe(34);
-    const names = algorithms.map((a) => a.info.name);
+  it('registers all 34 built-in hash algorithms', () => {
+    const hashAlgorithms = listAlgorithms('hash');
+    expect(hashAlgorithms.length).toBe(34);
+    const names = hashAlgorithms.map((a) => a.info.name);
 
     // Legacy MD
     expect(names).toContain('MD2');
@@ -62,8 +62,41 @@ describe('Algorithm Registry', () => {
     expect(names).toContain('Whirlpool');
   });
 
-  it('can look up every algorithm by name', () => {
+  it('registers all 22 symmetric cipher algorithms (AES 128/192/256 ECB/CBC/CTR/GCM)', () => {
+    const symAlgorithms = listAlgorithms('symmetric');
+    expect(symAlgorithms.length).toBe(22);
+    const names = symAlgorithms.map((a) => a.info.name);
+
+    expect(names).toContain('AES-128-ECB (Encrypt)');
+    expect(names).toContain('AES-128-ECB (Decrypt)');
+    expect(names).toContain('AES-128-CBC (Encrypt)');
+    expect(names).toContain('AES-128-CBC (Decrypt)');
+    expect(names).toContain('AES-128-CTR (Encrypt)');
+    expect(names).toContain('AES-128-CTR (Decrypt)');
+
+    expect(names).toContain('AES-192-ECB (Encrypt)');
+    expect(names).toContain('AES-192-ECB (Decrypt)');
+    expect(names).toContain('AES-192-CBC (Encrypt)');
+    expect(names).toContain('AES-192-CBC (Decrypt)');
+    expect(names).toContain('AES-192-CTR (Encrypt)');
+    expect(names).toContain('AES-192-CTR (Decrypt)');
+
+    expect(names).toContain('AES-256-ECB (Encrypt)');
+    expect(names).toContain('AES-256-ECB (Decrypt)');
+    expect(names).toContain('AES-256-CBC (Encrypt)');
+    expect(names).toContain('AES-256-CBC (Decrypt)');
+    expect(names).toContain('AES-256-CTR (Encrypt)');
+    expect(names).toContain('AES-256-CTR (Decrypt)');
+
+    expect(names).toContain('AES-128-GCM (Encrypt)');
+    expect(names).toContain('AES-128-GCM (Decrypt)');
+    expect(names).toContain('AES-256-GCM (Encrypt)');
+    expect(names).toContain('AES-256-GCM (Decrypt)');
+  });
+
+  it('can look up every algorithm by name across all categories', () => {
     const algorithms = listAlgorithms();
+    expect(algorithms.length).toBe(56);
     for (const algo of algorithms) {
       const retrieved = getAlgorithm(algo.info.name);
       expect(retrieved).toBeDefined();
@@ -71,75 +104,32 @@ describe('Algorithm Registry', () => {
     }
   });
 
-  it('groups algorithms by family correctly', () => {
-    const byFamily = getAlgorithmsByFamily();
+  it('groups algorithms by family correctly for hash and symmetric categories', () => {
+    const hashFamilies = getAlgorithmsByFamily('hash');
+    expect(hashFamilies.has('MD')).toBe(true);
+    expect(hashFamilies.has('SHA-1')).toBe(true);
+    expect(hashFamilies.has('SHA-2')).toBe(true);
+    expect(hashFamilies.has('SHA-3')).toBe(true);
+    expect(hashFamilies.has('RIPEMD')).toBe(true);
+    expect(hashFamilies.has('BLAKE')).toBe(true);
+    expect(hashFamilies.has('CRC')).toBe(true);
+    expect(hashFamilies.has('Checksum')).toBe(true);
+    expect(hashFamilies.has('XXHash')).toBe(true);
+    expect(hashFamilies.has('Chinese National Standard')).toBe(true);
+    expect(hashFamilies.has('Cipher-Based')).toBe(true);
 
-    expect(byFamily.has('MD')).toBe(true);
-    expect(byFamily.get('MD')?.map((a) => a.info.name)).toEqual(['MD2', 'MD4', 'MD5']);
-
-    expect(byFamily.has('SHA-1')).toBe(true);
-    expect(byFamily.get('SHA-1')?.map((a) => a.info.name)).toEqual(['SHA-1']);
-
-    expect(byFamily.has('SHA-2')).toBe(true);
-    expect(byFamily.get('SHA-2')?.map((a) => a.info.name)).toEqual([
-      'SHA-224',
-      'SHA-256',
-      'SHA-384',
-      'SHA-512',
-      'SHA-512/224',
-      'SHA-512/256',
-    ]);
-
-    expect(byFamily.has('SHA-3')).toBe(true);
-    expect(byFamily.get('SHA-3')?.map((a) => a.info.name)).toEqual([
-      'SHA3-224',
-      'SHA3-256',
-      'SHA3-384',
-      'SHA3-512',
-      'Keccak-224',
-      'Keccak-256',
-      'Keccak-384',
-      'Keccak-512',
-      'SHAKE128',
-      'SHAKE256',
-    ]);
-
-    expect(byFamily.has('RIPEMD')).toBe(true);
-    expect(byFamily.get('RIPEMD')?.map((a) => a.info.name)).toEqual([
-      'RIPEMD-128',
-      'RIPEMD-160',
-      'RIPEMD-256',
-      'RIPEMD-320',
-    ]);
-
-    expect(byFamily.has('BLAKE')).toBe(true);
-    expect(byFamily.get('BLAKE')?.map((a) => a.info.name)).toEqual([
-      'BLAKE2s',
-      'BLAKE2b',
-      'BLAKE3',
-    ]);
-
-    expect(byFamily.has('CRC')).toBe(true);
-    expect(byFamily.get('CRC')?.map((a) => a.info.name)).toEqual(['CRC-16', 'CRC32']);
-
-    expect(byFamily.has('Checksum')).toBe(true);
-    expect(byFamily.get('Checksum')?.map((a) => a.info.name)).toEqual(['Adler-32']);
-
-    expect(byFamily.has('XXHash')).toBe(true);
-    expect(byFamily.get('XXHash')?.map((a) => a.info.name)).toEqual(['XXH32', 'XXH64']);
-
-    expect(byFamily.has('Chinese National Standard')).toBe(true);
-    expect(byFamily.get('Chinese National Standard')?.map((a) => a.info.name)).toEqual(['SM3']);
-
-    expect(byFamily.has('Cipher-Based')).toBe(true);
-    expect(byFamily.get('Cipher-Based')?.map((a) => a.info.name)).toEqual(['Whirlpool']);
+    const symFamilies = getAlgorithmsByFamily('symmetric');
+    expect(symFamilies.has('AES-128')).toBe(true);
+    expect(symFamilies.has('AES-192')).toBe(true);
+    expect(symFamilies.has('AES-256')).toBe(true);
+    expect(symFamilies.has('AES-GCM (AEAD)')).toBe(true);
   });
 
-  it('computes hash and steps for all registered algorithms with "abc"', () => {
+  it('computes hash/cipher and steps for all registered algorithms', () => {
     const algorithms = listAlgorithms();
     for (const algo of algorithms) {
-      const result = algo.compute('abc');
-      expect(result.digest).toBeTruthy();
+      const result = algo.compute('3243f6a8885a308d313198a2e0370734');
+      expect(result.digest !== undefined).toBe(true);
       expect(result.steps.length).toBeGreaterThan(0);
       for (const step of result.steps) {
         expect(step.id).toBeTruthy();

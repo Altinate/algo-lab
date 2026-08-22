@@ -28,6 +28,19 @@ export function hexToBytes(hex: string): Uint8Array {
 export function uint8ToHex(n: number): string {
   return (n & 0xff).toString(16).padStart(2, '0');
 }
+export const formatHexByte = uint8ToHex;
+
+/** Convert a hex string to a UTF-8 string */
+export function hexToString(hex: string): string {
+  try {
+    const clean = hex.replace(/\s+/g, '');
+    if (clean.length % 2 !== 0) return '';
+    const bytes = hexToBytes(clean);
+    return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+  } catch {
+    return '';
+  }
+}
 
 /** Convert a 16-bit unsigned integer to a 4-char hex string */
 export function uint16ToHex(n: number): string {
@@ -38,6 +51,7 @@ export function uint16ToHex(n: number): string {
 export function byteToBinary(byte: number): string {
   return byte.toString(2).padStart(8, '0');
 }
+export const formatBinary = byteToBinary;
 
 /** Convert a byte array to a binary string */
 export function bytesToBinary(bytes: Uint8Array | number[]): string {

@@ -3,9 +3,11 @@ import { useHashEngine } from './hooks/useHashEngine';
 import { usePlayback } from './hooks/usePlayback';
 import AlgorithmSelector from './components/AlgorithmSelector';
 import InputPanel from './components/InputPanel';
+import CipherInputPanel from './components/CipherInputPanel';
 import PlaybackControls from './components/PlaybackControls';
 import StepVisualizer from './components/StepVisualizer';
 import HashOutput from './components/HashOutput';
+import CipherOutput from './components/CipherOutput';
 import AlgorithmInfoPanel from './components/AlgorithmInfo';
 
 export default function App() {
@@ -56,9 +58,9 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#090c10] text-[#f8fafc] flex flex-col font-mono antialiased">
       {/* ─── Top Telemetry Header Bar ────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 flex h-10 shrink-0 items-center justify-between border-b border-[#1f2937] bg-[#0c1017] px-3 sm:px-4">
-        {/* Left: Sidebar Toggle + Instrument Title */}
-        <div className="flex items-center gap-2 sm:gap-3">
+      <header className="sticky top-0 z-30 flex flex-wrap h-auto min-h-10 shrink-0 items-center justify-between border-b border-[#1f2937] bg-[#0c1017] px-3 sm:px-4 py-1 gap-2">
+        {/* Left: Sidebar Toggle + Instrument Title + Domain Tabs */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             onClick={toggleSidebar}
             className={`flex h-6 w-6 items-center justify-center rounded-[2px] border transition-all text-xs font-medium ${
@@ -76,9 +78,54 @@ export default function App() {
             <h1 className="text-xs font-semibold tracking-tight text-white uppercase">
               CRYPTOSCOPE
             </h1>
-            <span className="hidden sm:inline-block text-[9px] text-[#64748b] border-l border-[#1f2937] pl-2 uppercase font-medium">
-              INTERACTIVE CRYPTOGRAPHIC INSPECTOR
+            <span className="hidden md:inline-block text-[9px] text-[#64748b] border-l border-[#1f2937] pl-2 uppercase font-medium">
+              INTERACTIVE CRYPTOGRAPHIC LOGIC ANALYZER
             </span>
+          </div>
+
+          {/* ─── Top-Level Domain Switcher Tabs ─────────────────────────── */}
+          <div className="flex items-center gap-1 border-l border-[#1f2937] pl-2">
+            <button
+              onClick={() => engine.setCategory('hash')}
+              className={`rounded-[2px] px-2 py-0.5 text-[9px] font-bold uppercase transition-all flex items-center gap-1 ${
+                engine.category === 'hash'
+                  ? 'bg-[#152238] text-[#38bdf8] border border-[#38bdf8]/60 shadow-[0_0_8px_rgba(56,189,248,0.15)]'
+                  : 'bg-[#0e131b] text-[#64748b] hover:text-[#cbd5e1] border border-[#1f2937]'
+              }`}
+            >
+              <span>⌗</span>
+              <span>HASH FUNCTIONS (34)</span>
+            </button>
+
+            <button
+              onClick={() => engine.setCategory('symmetric')}
+              className={`rounded-[2px] px-2 py-0.5 text-[9px] font-bold uppercase transition-all flex items-center gap-1 ${
+                engine.category === 'symmetric'
+                  ? 'bg-[#152238] text-[#34d399] border border-[#34d399]/60 shadow-[0_0_8px_rgba(52,211,153,0.15)]'
+                  : 'bg-[#0e131b] text-[#64748b] hover:text-[#cbd5e1] border border-[#1f2937]'
+              }`}
+            >
+              <span>🔒</span>
+              <span>SYMMETRIC CIPHERS (22)</span>
+            </button>
+
+            <button
+              disabled
+              className="rounded-[2px] px-1.5 py-0.5 text-[8.5px] font-medium uppercase bg-[#090c10] text-[#475569] border border-[#1f2937]/60 cursor-not-allowed opacity-60 hidden lg:inline-flex items-center gap-1"
+              title="Phase 3 Expansion"
+            >
+              <span>🔑</span>
+              <span>ASYMMETRIC (PHASE 3)</span>
+            </button>
+
+            <button
+              disabled
+              className="rounded-[2px] px-1.5 py-0.5 text-[8.5px] font-medium uppercase bg-[#090c10] text-[#475569] border border-[#1f2937]/60 cursor-not-allowed opacity-60 hidden lg:inline-flex items-center gap-1"
+              title="Phase 4 Expansion"
+            >
+              <span>⚛</span>
+              <span>POST-QUANTUM (PHASE 4)</span>
+            </button>
           </div>
         </div>
 
@@ -87,7 +134,7 @@ export default function App() {
           {engine.algorithm && (
             <div className="flex items-center gap-1.5 rounded-[2px] bg-[#0e131b] px-2 py-0.5 border border-[#1f2937] text-[11px] tabular-nums">
               <span className="text-[#64748b] hidden sm:inline text-[9px] font-medium">TARGET:</span>
-              <span className="font-semibold text-[#38bdf8]">
+              <span className={`font-semibold ${engine.category === 'symmetric' ? 'text-[#34d399]' : 'text-[#38bdf8]'}`}>
                 {engine.algorithm.info.name}
               </span>
               <span className="text-[9px] text-[#64748b]">
@@ -119,7 +166,7 @@ export default function App() {
             <div className="space-y-3.5 min-w-[220px]">
               <div className="flex items-center justify-between pb-1 border-b border-[#1f2937]">
                 <span className="text-[9px] font-medium uppercase tracking-wider text-[#64748b]">
-                  INSTRUMENT NAVIGATOR
+                  {engine.category === 'symmetric' ? 'CIPHER NAVIGATOR' : 'HASH NAVIGATOR'}
                 </span>
                 <button
                   onClick={toggleSidebar}
@@ -160,22 +207,49 @@ export default function App() {
             </div>
           )}
 
-          {/* Upper Deck: Data Stream Input + Live Digest Output */}
+          {/* Upper Deck: Data Stream Input + Live Output */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-2.5 items-stretch">
-            <InputPanel
-              input={engine.input}
-              onInputChange={engine.setInput}
-              isXOF={engine.isXOF}
-              xofOutputBytes={engine.xofOutputBytes}
-              onXofOutputBytesChange={engine.setXofOutputBytes}
-            />
-
-            <HashOutput
-              digest={engine.digest}
-              algorithmName={engine.algorithmName}
-              digestSize={engine.isXOF ? engine.xofOutputBytes * 8 : (engine.algorithm?.info.digestSize ?? 0)}
-              isComplete={isComplete}
-            />
+            {engine.category === 'symmetric' && engine.algorithm?.info ? (
+              <>
+                <CipherInputPanel
+                  info={engine.algorithm.info}
+                  input={engine.input}
+                  onInputChange={engine.setInput}
+                  keyHex={engine.keyHex}
+                  onKeyHexChange={engine.setKeyHex}
+                  ivHex={engine.ivHex}
+                  onIvHexChange={engine.setIvHex}
+                  aadHex={engine.aadHex}
+                  onAadHexChange={engine.setAadHex}
+                  tagHex={engine.tagHex}
+                  onTagHexChange={engine.setTagHex}
+                />
+                <CipherOutput
+                  outputHex={engine.digest}
+                  tagHex={engine.resultTagHex}
+                  tagValid={engine.tagValid}
+                  algorithmName={engine.algorithmName}
+                  direction={engine.algorithm.info.direction}
+                  isComplete={isComplete}
+                />
+              </>
+            ) : (
+              <>
+                <InputPanel
+                  input={engine.input}
+                  onInputChange={engine.setInput}
+                  isXOF={engine.isXOF}
+                  xofOutputBytes={engine.xofOutputBytes}
+                  onXofOutputBytesChange={engine.setXofOutputBytes}
+                />
+                <HashOutput
+                  digest={engine.digest}
+                  algorithmName={engine.algorithmName}
+                  digestSize={engine.isXOF ? engine.xofOutputBytes * 8 : (engine.algorithm?.info.digestSize ?? 0)}
+                  isComplete={isComplete}
+                />
+              </>
+            )}
           </div>
 
           {/* Clock & Transport Controls */}

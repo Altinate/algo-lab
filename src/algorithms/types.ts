@@ -24,10 +24,13 @@ export interface ComputationStep {
   visualizationType: VisualizationType;
 }
 
+export type AlgorithmCategory = 'hash' | 'symmetric' | 'asymmetric' | 'pqc';
+
 export type VisualizationType =
   | 'binary-transform'    // Show binary/hex before→after (padding, chunking)
   | 'round-computation'   // Show working variables + round function
-  | 'state-matrix'        // Show state as a matrix (SHA-3 / Keccak)
+  | 'state-matrix'        // Show state as a matrix (SHA-3 / Keccak, Whirlpool)
+  | 'aes-state-matrix'    // Show AES 4x4 State matrix (SubBytes, ShiftRows, MixColumns, AddRoundKey)
   | 'xor-table'           // Show XOR/polynomial operations (CRC32, Adler32)
   | 'merkle-tree'         // Show tree structure (BLAKE3)
   | 'mixing-function'     // Show G mixing rounds (BLAKE2, BLAKE3)
@@ -36,13 +39,16 @@ export type VisualizationType =
 
 /** Metadata about an algorithm displayed in the UI */
 export interface AlgorithmInfo {
-  /** Display name (e.g., "SHA-256") */
+  /** Display name (e.g., "SHA-256", "AES-128-CBC (Encrypt)") */
   name: string;
 
-  /** Algorithm family for grouping in selector (e.g., "SHA-2", "SHA-3", "BLAKE", "RIPEMD", "Checksum", "Non-Crypto", "Legacy") */
+  /** Algorithm family for grouping in selector (e.g., "SHA-2", "AES-128", "AES-GCM (AEAD)") */
   family: string;
 
-  /** Output digest size in bits */
+  /** Domain category (defaults to 'hash') */
+  category?: AlgorithmCategory;
+
+  /** Output digest size or block size in bits */
   digestSize: number;
 
   /** Internal block size in bits */
@@ -60,7 +66,7 @@ export interface AlgorithmInfo {
   /** Optional warning about known weaknesses */
   securityNote?: string;
 
-  /** Year of publication */
+  /** Year of publication / standard */
   year: number;
 
   /** Designer(s) */
@@ -68,6 +74,13 @@ export interface AlgorithmInfo {
 
   /** Whether the algorithm is an extendable-output function with variable length (e.g. SHAKE) */
   isXOF?: boolean;
+
+  /** Symmetric Cipher specific metadata */
+  keySize?: number; // in bits (128, 192, 256)
+  cipherMode?: 'ECB' | 'CBC' | 'CTR' | 'GCM';
+  direction?: 'encrypt' | 'decrypt';
+  requiresIV?: boolean;
+  requiresAAD?: boolean;
 }
 
 /** The interface every algorithm plugin must implement */
@@ -76,18 +89,23 @@ export interface AlgorithmPlugin {
   info: AlgorithmInfo;
 
   /**
-   * Compute the hash of the input and return ALL intermediate steps.
+   * Compute the hash/cipher of the input and return ALL intermediate steps.
    *
-   * @param input - The raw input string (UTF-8)
-   * @param options - Optional computation options (e.g., variable output length for XOFs)
-   * @returns An object with the final hex digest and ordered step array
+   * @param input - The raw input string (UTF-8 or hex)
+   * @param options - Optional computation options (XOF length, key, iv, aad, tag)
+   * @returns An object with the final hex digest/ciphertext, optional auth tag, and ordered step array
    */
   compute(input: string, options?: Record<string, unknown>): ComputationResult;
 }
 
 export interface ComputationResult {
-  /** Final hash as hex string */
+  /** Final hash or ciphertext/recovered-plaintext as hex string */
   digest: string;
+  /** Optional AEAD authentication tag (e.g. GCM, Poly1305) */
+  tagHex?: string;
+  /** Optional AEAD tag verification flag */
+  tagValid?: boolean;
   /** Ordered array of all visualization steps */
   steps: ComputationStep[];
 }
+

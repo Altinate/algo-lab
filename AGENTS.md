@@ -157,14 +157,32 @@ export interface XorTableData {
 }
 ```
 
+### 2.5 `AesStateMatrixView` (`visualizationType: 'aes-state-matrix'`)
+Used by **AES-128, AES-192, AES-256 (ECB, CBC, CTR, GCM modes)**.
+
+```typescript
+export interface AesStateMatrixData {
+  roundIndex?: number;             // Current round (0..Nr)
+  totalRounds?: number;            // Total rounds (10 for AES-128, 12 for AES-192, 14 for AES-256)
+  phase?: string;                  // e.g. 'Round 1', 'Final Round', 'CBC Chaining'
+  subStep?: string;                // e.g. 'SubBytes', 'ShiftRows', 'MixColumns', 'AddRoundKey'
+  operationName?: string;          // Identifier for helper views
+  stateMatrix: string[][];         // 4×4 column-major array of 2-digit hex strings
+  prevStateMatrix?: string[][];    // 4×4 pre-transformation array for lane diff highlighting
+  roundKeyMatrix?: string[][];     // 4×4 round key array for AddRoundKey step
+  blockIndex?: number;             // Multi-block index (0-based)
+  totalBlocks?: number;            // Total blocks count
+}
+```
+
 ---
 
 ## 3. Hard Engineering Rules (Do & Don't)
 
 ### ✅ DO:
 1. **Emit Canonical Payloads**: When adding or editing an algorithm plugin, ensure its step payloads conform strictly to the interfaces above.
-2. **Verify Official Test Vectors**: Every algorithm change MUST pass its official standard test vectors (NIST FIPS 180-4, NIST FIPS 202, RFC 1319, RFC 1320, RFC 1321, RFC 7693, ISO/IEC 10118-3, GB/T 32918.2-2016). Run `npm run test:run`.
-3. **Run Full Regression Suite**: Whenever modifying shared components (`RoundComputationView`, `MixingFunctionView`, `StateMatrixView`, `XorTableView`, `GenericStepView`), run the ENTIRE test suite (`npm run test:run`) to ensure zero regressions across all 34 algorithms.
+2. **Verify Official Test Vectors**: Every algorithm change MUST pass its official standard test vectors (NIST FIPS 180-4, NIST FIPS 202, NIST FIPS 197, NIST SP 800-38A, NIST SP 800-38D, RFC 1319, RFC 1320, RFC 1321, RFC 7693, ISO/IEC 10118-3, GB/T 32918.2-2016). Run `npm run test:run`.
+3. **Run Full Regression Suite**: Whenever modifying shared components (`RoundComputationView`, `MixingFunctionView`, `StateMatrixView`, `AesStateMatrixView`, `XorTableView`, `GenericStepView`), run the ENTIRE test suite (`npm run test:run`) to ensure zero regressions across all 56 algorithms.
 4. **Use 64-Bit BigInt Arithmetic for 64-Bit Algorithms**: JavaScript `number` loses precision above $2^{53} - 1$. Always use `bigint` with `0xFFFFFFFFFFFFFFFFn` bitmask for SHA-512, SHA-384, BLAKE2b, XXH64, Whirlpool, and Keccak/SHA-3.
 5. **Adhere to the Hardware Instrument Design System**:
    - Backgrounds: Obsidian substrate `#090c10`, `#0c1017`, `#0e131b`.
@@ -172,7 +190,7 @@ export interface XorTableData {
    - Radii: Micro-geometry `rounded-[2px]` or `rounded-none`. Never use soft `rounded-lg` or `rounded-full` pills.
    - Typography: Monospace (`font-mono`) with `tabular-nums` forced on all numerals and formulas.
    - Chromatic 95/5 Discipline: 95% dark substrate, 5% phosphor signals (`#e5a93b` amber, `#38bdf8` cyan, `#34d399` emerald, `#c084fc` purple). Controlled text-shadow max 3px radius (e.g. `.phosphor-amber`).
-6. **Always Include Raw Test Output in Verification Reports**: When reporting test vector verification, always paste the unedited `npm run test:run` terminal output first. A formatted summary table is welcome on top of that for readability, but never as a replacement. Where test vectors are individually verified outside the test suite (e.g. to debug a suspected discrepancy), run a direct compute script (`npx tsx scripts/compute-digests.ts`) and paste its raw stdout. This rule exists because hand-transcribed digest values are indistinguishable from bugs when they are wrong, and re-verification is expensive.
+6. **Always Include Raw Test Output in Verification Reports**: When reporting test vector verification, always paste the unedited `npm run test:run` terminal output first. A formatted summary table is welcome on top of that for readability, but never as a replacement. Where test vectors are individually verified outside the test suite (e.g. to debug a suspected discrepancy), run a direct compute script (`npx tsx scripts/compute-digests.ts` or `scripts/compute-aes-digests.ts`) and paste its raw stdout. This rule exists because hand-transcribed digest values are indistinguishable from bugs when they are wrong, and re-verification is expensive.
 
 ### ❌ DO NOT:
 1. **DO NOT Add Fallback Key Matching to Components**: Do not write `data.crcBefore || data.prevCrc` or `data.v || data.stateMatrix` in visualizers. Fix the plugin to emit the canonical key instead.
@@ -180,7 +198,7 @@ export interface XorTableData {
 3. **DO NOT Expand Multi-Block Merkle-Trees in BLAKE3 (Yet)**: BLAKE3 is intentionally scoped to single-chunk/single-block inputs ($\le 64$ bytes). Multi-chunk Merkle tree visualization is an explicitly deferred feature. If input exceeds 64 bytes, report the single-block evaluation cleanly in the UI.
 4. **DO NOT Add External Web Links ("REF" buttons)**: This application is a self-contained offline instrument. External URLs and outbound links in the DOM are forbidden.
 5. **DO NOT Introduce AI-Slop Glows or Soft Shadows**: Avoid large blurred radial gradients, heavy drop shadows, or generic SaaS card elevations.
-6. **DO NOT Hand-Transcribe Digest Values in Reports**: Never retype digest hex strings from memory or internal state into a summary table without also including the raw tool output. Transcription errors are indistinguishable from implementation bugs and require expensive re-verification passes. Always paste the unedited `npm run test:run` terminal output (or raw output from a direct compute script like `npx tsx scripts/compute-digests.ts`) *alongside* any formatted summary table. The raw output is the ground truth; the table is supplemental readability only.
+6. **DO NOT Hand-Transcribe Digest Values in Reports**: Never retype digest hex strings from memory or internal state into a summary table without also including the raw tool output. Transcription errors are indistinguishable from implementation bugs and require expensive re-verification passes. Always paste the unedited `npm run test:run` terminal output (or raw output from a direct compute script) *alongside* any formatted summary table. The raw output is the ground truth; the table is supplemental readability only.
 
 ---
 
@@ -192,7 +210,7 @@ Before considering any task complete in this repository, verify all 4 criteria:
    ```bash
    npm run test:run
    ```
-   Must output: `Test Files 35 passed (35), Tests 130 passed (130)`.
+   Must output: `Test Files 39 passed (39), Tests 144 passed (144)`.
 2. **Production Build Clean**:
    ```bash
    npm run build
@@ -201,4 +219,4 @@ Before considering any task complete in this repository, verify all 4 criteria:
 3. **No Blank UI Fallbacks**:
    Inspect playback in browser (`http://localhost:5173`) to confirm every step has populated data.
 4. **Zero Shared Component Regression**:
-   Verify SHA-256, MD5, and SHA-512 render identically after any visualizer changes.
+   Verify SHA-256, MD5, SHA-512, and AES-128 render identically after any visualizer changes.

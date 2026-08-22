@@ -172,6 +172,7 @@ export interface XorTableData {
    - Radii: Micro-geometry `rounded-[2px]` or `rounded-none`. Never use soft `rounded-lg` or `rounded-full` pills.
    - Typography: Monospace (`font-mono`) with `tabular-nums` forced on all numerals and formulas.
    - Chromatic 95/5 Discipline: 95% dark substrate, 5% phosphor signals (`#e5a93b` amber, `#38bdf8` cyan, `#34d399` emerald, `#c084fc` purple). Controlled text-shadow max 3px radius (e.g. `.phosphor-amber`).
+6. **Always Include Raw Test Output in Verification Reports**: When reporting test vector verification, always paste the unedited `npm run test:run` terminal output first. A formatted summary table is welcome on top of that for readability, but never as a replacement. Where test vectors are individually verified outside the test suite (e.g. to debug a suspected discrepancy), run a direct compute script (`npx tsx scripts/compute-digests.ts`) and paste its raw stdout. This rule exists because hand-transcribed digest values are indistinguishable from bugs when they are wrong, and re-verification is expensive.
 
 ### ❌ DO NOT:
 1. **DO NOT Add Fallback Key Matching to Components**: Do not write `data.crcBefore || data.prevCrc` or `data.v || data.stateMatrix` in visualizers. Fix the plugin to emit the canonical key instead.
@@ -179,6 +180,7 @@ export interface XorTableData {
 3. **DO NOT Expand Multi-Block Merkle-Trees in BLAKE3 (Yet)**: BLAKE3 is intentionally scoped to single-chunk/single-block inputs ($\le 64$ bytes). Multi-chunk Merkle tree visualization is an explicitly deferred feature. If input exceeds 64 bytes, report the single-block evaluation cleanly in the UI.
 4. **DO NOT Add External Web Links ("REF" buttons)**: This application is a self-contained offline instrument. External URLs and outbound links in the DOM are forbidden.
 5. **DO NOT Introduce AI-Slop Glows or Soft Shadows**: Avoid large blurred radial gradients, heavy drop shadows, or generic SaaS card elevations.
+6. **DO NOT Hand-Transcribe Digest Values in Reports**: Never retype digest hex strings from memory or internal state into a summary table without also including the raw tool output. Transcription errors are indistinguishable from implementation bugs and require expensive re-verification passes. Always paste the unedited `npm run test:run` terminal output (or raw output from a direct compute script like `npx tsx scripts/compute-digests.ts`) *alongside* any formatted summary table. The raw output is the ground truth; the table is supplemental readability only.
 
 ---
 

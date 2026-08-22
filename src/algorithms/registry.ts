@@ -67,7 +67,7 @@ function register(plugin: AlgorithmPlugin) {
   }
 }
 
-// Register all algorithms (30 algorithms across 10 families)
+// Register all algorithms (34 algorithms across 11 families)
 [
   // Legacy MD
   md2Plugin,

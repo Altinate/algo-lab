@@ -126,6 +126,11 @@ export default function BinaryTransformView({ step }: Props) {
     return <Argon2idTransformView data={data.argon2id as any} />;
   }
 
+  // BIP-39 step (Bitcoin Improvement Proposal 39)
+  if (data.bip39) {
+    return <Bip39TransformView data={data.bip39 as any} />;
+  }
+
   // Fallback
   return <FallbackDataView data={data} />;
 }
@@ -1161,6 +1166,186 @@ function Argon2idTransformView({
           </div>
           <div className="text-xs text-[#34d399] font-bold break-all bg-[#090c10] p-2 rounded-[2px] border border-[#1f2937] tabular-nums select-all">
             0x{data.derivedTagHex}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Bip39TransformView({
+  data,
+}: {
+  data: {
+    toolType: 'BIP-39';
+    entropyBits: number;
+    entropyHex: string;
+    checksumBits: number;
+    checksumHex: string;
+    combinedBitstream: string;
+    wordCount: number;
+    words: Array<{
+      index: number;
+      wordIndex: number;
+      word: string;
+      bits11: string;
+    }>;
+    mnemonicPhrase: string;
+    passphrase?: string;
+    saltString: string;
+    pbkdf2Iteration?: number;
+    totalIterations: number;
+    progressPercent: number;
+    phaseName: string;
+    uHexSnippet?: string;
+    derivedSeedHex?: string;
+    isSummary?: boolean;
+  };
+}) {
+  const pct = data.progressPercent ?? 0;
+
+  return (
+    <div className="space-y-3 rounded-[2px] bg-[#0c1017] p-3 border border-[#1f2937] font-mono">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-1.5 border-b border-[#1f2937]">
+        <div className="flex items-center gap-2">
+          <span className="rounded-[2px] bg-[#1c1810] px-1.5 py-0.5 text-[9px] font-bold text-[#e5a93b] border border-[#e5a93b]/40 uppercase phosphor-amber">
+            BIP-39 WALLET RECOVERY ENGINE
+          </span>
+          <span className="text-[10px] text-[#cbd5e1] font-semibold">
+            {data.phaseName}
+          </span>
+        </div>
+        <span className="text-[9px] text-[#64748b] uppercase">
+          BITCOIN SEED GENERATION STANDARD
+        </span>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-[9px]">
+          <span className="text-[#64748b] font-bold">
+            PIPELINE STATUS {data.pbkdf2Iteration ? `(PBKDF2 CYCLE ${data.pbkdf2Iteration}/${data.totalIterations})` : ''}
+          </span>
+          <span className="text-[#e5a93b] font-bold">{pct}%</span>
+        </div>
+        <div className="w-full h-1.5 bg-[#090c10] rounded-[1px] border border-[#1f2937] overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-[#e5a93b] via-[#38bdf8] to-[#34d399] transition-all duration-300"
+            style={{ width: `${Math.min(100, Math.max(2, pct))}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Parameters Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 tabular-nums">
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">ENTROPY</span>
+          <span className="text-xs text-[#38bdf8] font-bold">
+            {data.entropyBits} BITS ({data.entropyBits / 8} BYTES)
+          </span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">SHA-256 CHECKSUM</span>
+          <span className="text-xs text-[#34d399] font-bold">
+            {data.checksumBits} BITS (ENT/32)
+          </span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">WORD COUNT</span>
+          <span className="text-xs text-[#e5a93b] font-bold phosphor-amber">
+            {data.wordCount} WORDS
+          </span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">PBKDF2 ITERATIONS</span>
+          <span className="text-xs text-[#c084fc] font-bold">
+            {data.totalIterations} ROUNDS
+          </span>
+        </div>
+      </div>
+
+      {/* Entropy & SHA-256 Checksum Card */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        <DataRow
+          label="RAW ENTROPY BUFFER"
+          value={data.entropyHex ? `0x${data.entropyHex}` : '(INITIALIZING)'}
+          type="hex"
+        />
+        <DataRow
+          label="APPENDED CHECKSUM FIELD"
+          value={data.checksumHex || '(PENDING SHA-256)'}
+          type="binary"
+        />
+      </div>
+
+      {/* Mnemonic Words Grid (When Available) */}
+      {data.words && data.words.length > 0 && (
+        <div className="space-y-1">
+          <span className="text-[9px] font-bold uppercase tracking-wider text-[#64748b]">
+            11-BIT RADIX-2048 WORDLIST INDEX MAPPING
+          </span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-1.5 tabular-nums">
+            {data.words.map((w) => (
+              <div
+                key={w.index}
+                className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]"
+              >
+                <div className="flex items-center justify-between text-[8.5px] text-[#64748b] font-bold">
+                  <span>#{w.index}</span>
+                  <span>IDX {w.wordIndex}</span>
+                </div>
+                <span className="text-sm font-bold text-[#e5a93b] my-0.5 phosphor-amber truncate">
+                  {w.word}
+                </span>
+                <span className="text-[8px] text-[#34d399] font-mono">
+                  {w.bits11}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Human-Readable Recovery Phrase */}
+      {data.mnemonicPhrase && (
+        <div className="space-y-1 p-2 rounded-[2px] bg-[#121620] border border-[#38bdf8]/30">
+          <span className="text-[9px] font-bold uppercase tracking-wider text-[#38bdf8]">
+            HUMAN-READABLE BACKUP MNEMONIC PHRASE
+          </span>
+          <div className="text-xs text-[#f8fafc] font-semibold break-all bg-[#090c10] p-2 rounded-[2px] border border-[#1f2937] leading-relaxed select-all">
+            "{data.mnemonicPhrase}"
+          </div>
+        </div>
+      )}
+
+      {/* Passphrase & Salt */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <DataRow
+          label="PASSPHRASE (25TH WORD / SALT EXTENSION)"
+          value={data.passphrase ? `"${data.passphrase}"` : '(NO PASSPHRASE / DEFAULT)'}
+          type="text"
+        />
+        <DataRow
+          label="PBKDF2 SALT ENCODING"
+          value={`"${data.saltString}"`}
+          type="text"
+        />
+      </div>
+
+      {/* Derived Seed (When Complete) */}
+      {data.derivedSeedHex && (
+        <div className="space-y-1 p-2.5 rounded-[2px] bg-[#0c1813] border border-[#34d399]/40">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#34d399]">
+              FINAL 512-BIT BINARY MASTER SEED (64 BYTES)
+            </span>
+            <span className="rounded-[2px] bg-[#0f291e] px-1.5 py-0.2 text-[8.5px] font-bold text-[#34d399] border border-[#34d399]/40">
+              BIP-32 HD ROOT READY
+            </span>
+          </div>
+          <div className="text-xs text-[#34d399] font-bold break-all bg-[#090c10] p-2 rounded-[2px] border border-[#1f2937] tabular-nums select-all">
+            0x{data.derivedSeedHex}
           </div>
         </div>
       )}

@@ -160,6 +160,10 @@ mlDsaPlugins.forEach(register);
 // Register all Encoding Plugins (16 algorithms across 2 families)
 encodingPlugins.forEach(register);
 
+// Tools Plugins (KDF, Wallet/Mnemonic, Generators, Utilities)
+import { pbkdf2Plugin } from './tools';
+[pbkdf2Plugin].forEach(register);
+
 /** Get an algorithm plugin by name */
 export function getAlgorithm(name: string): AlgorithmPlugin | undefined {
   return registry.get(name);

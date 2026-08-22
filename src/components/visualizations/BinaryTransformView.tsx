@@ -111,6 +111,11 @@ export default function BinaryTransformView({ step }: Props) {
     return <JwtTokenView data={data.jwt as any} />;
   }
 
+  // PBKDF2 step (RFC 8018)
+  if (data.pbkdf2) {
+    return <Pbkdf2TransformView data={data.pbkdf2 as any} />;
+  }
+
   // Fallback
   return <FallbackDataView data={data} />;
 }
@@ -693,6 +698,140 @@ function JwtTokenView({
           type="hex"
         />
       </div>
+    </div>
+  );
+}
+
+function Pbkdf2TransformView({
+  data,
+}: {
+  data: {
+    toolType: 'PBKDF2';
+    password: string;
+    salt: string;
+    iterations: number;
+    currentIteration?: number;
+    blockIndex: number;
+    totalBlocks: number;
+    keyLength: number;
+    uHex?: string;
+    accumulatorHex?: string;
+    derivedKeyHex?: string;
+    progressPercent?: number;
+    phaseName: string;
+    isSummary?: boolean;
+  };
+}) {
+  const pct = data.progressPercent ?? 0;
+
+  return (
+    <div className="space-y-3 rounded-[2px] bg-[#0c1017] p-3 border border-[#1f2937] font-mono">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-1.5 border-b border-[#1f2937]">
+        <div className="flex items-center gap-2">
+          <span className="rounded-[2px] bg-[#1c1424] px-1.5 py-0.5 text-[9px] font-bold text-[#c084fc] border border-[#c084fc]/40 uppercase">
+            PBKDF2 HMAC-SHA256
+          </span>
+          <span className="text-[10px] text-[#cbd5e1] font-semibold">
+            {data.phaseName}
+          </span>
+        </div>
+        <span className="text-[9px] text-[#64748b] uppercase">
+          RFC 8018 KEY DERIVATION FUNCTION
+        </span>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-[9px]">
+          <span className="text-[#64748b] font-bold">
+            ITERATION CYCLE: {data.currentIteration ?? 0} / {data.iterations} {data.isSummary ? '(SUMMARY PAGINATION)' : ''}
+          </span>
+          <span className="text-[#c084fc] font-bold">{pct}%</span>
+        </div>
+        <div className="w-full h-1.5 bg-[#090c10] rounded-[1px] border border-[#1f2937] overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-[#c084fc] to-[#38bdf8] transition-all duration-300"
+            style={{ width: `${Math.min(100, Math.max(2, pct))}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Parameters Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 tabular-nums">
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">PASSWORD</span>
+          <span className="text-xs text-[#f8fafc] font-bold truncate">
+            "{data.password}"
+          </span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">SALT</span>
+          <span className="text-xs text-[#38bdf8] font-bold truncate">
+            "{data.salt}"
+          </span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">BLOCK</span>
+          <span className="text-xs text-[#34d399] font-bold">
+            {data.blockIndex > 0 ? `${data.blockIndex} OF ${data.totalBlocks}` : `INITIALIZING (${data.totalBlocks} BLOCKS)`}
+          </span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">TARGET KEY LEN</span>
+          <span className="text-xs text-[#e5a93b] font-bold phosphor-amber">
+            {data.keyLength} BYTES ({data.keyLength * 8} BITS)
+          </span>
+        </div>
+      </div>
+
+      {/* PRF Round & Accumulator Cards */}
+      {data.uHex && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {/* U_k Card */}
+          <div className="space-y-1 p-2 rounded-[2px] bg-[#0e141f] border border-[#38bdf8]/30">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-[#38bdf8]">
+                INTERMEDIATE PRF U_{data.currentIteration ?? 1}
+              </span>
+              <span className="text-[8px] text-[#64748b]">HMAC-SHA256</span>
+            </div>
+            <div className="text-[10px] text-[#38bdf8] font-bold break-all bg-[#090c10] p-1.5 rounded-[2px] border border-[#1f2937] tabular-nums">
+              0x{data.uHex}
+            </div>
+          </div>
+
+          {/* Running XOR Accumulator Card */}
+          <div className="space-y-1 p-2 rounded-[2px] bg-[#1c1424] border border-[#c084fc]/30">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-[#c084fc]">
+                RUNNING XOR ACCUMULATOR T_{data.blockIndex}
+              </span>
+              <span className="text-[8px] text-[#64748b]">U₁ ⊕ ... ⊕ U_{data.currentIteration ?? 1}</span>
+            </div>
+            <div className="text-[10px] text-[#c084fc] font-bold break-all bg-[#090c10] p-1.5 rounded-[2px] border border-[#1f2937] tabular-nums">
+              0x{data.accumulatorHex || data.uHex}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Derived Key Result (When Complete) */}
+      {data.derivedKeyHex && (
+        <div className="space-y-1 p-2.5 rounded-[2px] bg-[#0c1813] border border-[#34d399]/40">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#34d399]">
+              FINAL DERIVED KEY (DK) — {data.keyLength * 8} BITS
+            </span>
+            <span className="rounded-[2px] bg-[#0f291e] px-1.5 py-0.2 text-[8.5px] font-bold text-[#34d399] border border-[#34d399]/40">
+              HIGH ENTROPY KEY
+            </span>
+          </div>
+          <div className="text-xs text-[#34d399] font-bold break-all bg-[#090c10] p-2 rounded-[2px] border border-[#1f2937] tabular-nums select-all">
+            0x{data.derivedKeyHex}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

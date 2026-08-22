@@ -216,7 +216,7 @@ describe('Algorithm Registry', () => {
 
   it('can look up every algorithm by name across all categories', () => {
     const algorithms = listAlgorithms();
-    expect(algorithms.length).toBe(129);
+    expect(algorithms.length).toBe(130);
     for (const algo of algorithms) {
       const retrieved = getAlgorithm(algo.info.name);
       expect(retrieved).toBeDefined();
@@ -263,7 +263,7 @@ describe('Algorithm Registry', () => {
     expect(encFamilies.has('Structured Token')).toBe(true);
 
     const toolsFamilies = getAlgorithmsByFamily('tools');
-    expect(toolsFamilies instanceof Map).toBe(true);
+    expect(toolsFamilies.has('Key Derivation Functions (KDF)')).toBe(true);
   });
 
   it('computes hash/cipher and steps for all registered algorithms', () => {

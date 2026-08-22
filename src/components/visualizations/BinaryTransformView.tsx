@@ -116,6 +116,11 @@ export default function BinaryTransformView({ step }: Props) {
     return <Pbkdf2TransformView data={data.pbkdf2 as any} />;
   }
 
+  // Scrypt step (RFC 7914)
+  if (data.scrypt) {
+    return <ScryptTransformView data={data.scrypt as any} />;
+  }
+
   // Fallback
   return <FallbackDataView data={data} />;
 }
@@ -825,6 +830,148 @@ function Pbkdf2TransformView({
             </span>
             <span className="rounded-[2px] bg-[#0f291e] px-1.5 py-0.2 text-[8.5px] font-bold text-[#34d399] border border-[#34d399]/40">
               HIGH ENTROPY KEY
+            </span>
+          </div>
+          <div className="text-xs text-[#34d399] font-bold break-all bg-[#090c10] p-2 rounded-[2px] border border-[#1f2937] tabular-nums select-all">
+            0x{data.derivedKeyHex}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ScryptTransformView({
+  data,
+}: {
+  data: {
+    toolType: 'Scrypt';
+    password: string;
+    salt: string;
+    N: number;
+    r: number;
+    p: number;
+    dkLen: number;
+    memoryFootprintBytes: number;
+    phaseName: string;
+    currentPhase: string;
+    progressPercent: number;
+    blockIndex?: number;
+    totalBlocks?: number;
+    vIndex?: number;
+    lookupIndex?: number;
+    lookupTargetV?: number;
+    xHexSnippet?: string;
+    vjHexSnippet?: string;
+    derivedKeyHex?: string;
+    isSummary?: boolean;
+  };
+}) {
+  const pct = data.progressPercent ?? 0;
+
+  return (
+    <div className="space-y-3 rounded-[2px] bg-[#0c1017] p-3 border border-[#1f2937] font-mono">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-1.5 border-b border-[#1f2937]">
+        <div className="flex items-center gap-2">
+          <span className="rounded-[2px] bg-[#1c1424] px-1.5 py-0.5 text-[9px] font-bold text-[#c084fc] border border-[#c084fc]/40 uppercase">
+            SCRYPT ROMIX MEMORY-HARD KDF
+          </span>
+          <span className="text-[10px] text-[#cbd5e1] font-semibold">
+            {data.phaseName}
+          </span>
+        </div>
+        <span className="text-[9px] text-[#64748b] uppercase">
+          RFC 7914 (SALSA20/8 8-ROUND CORE)
+        </span>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-[9px]">
+          <span className="text-[#64748b] font-bold">
+            STAGE PROGRESS {data.isSummary ? '(MILESTONE TELEMETRY CHECKPOINT)' : ''}
+          </span>
+          <span className="text-[#c084fc] font-bold">{pct}%</span>
+        </div>
+        <div className="w-full h-1.5 bg-[#090c10] rounded-[1px] border border-[#1f2937] overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-[#c084fc] via-[#38bdf8] to-[#34d399] transition-all duration-300"
+            style={{ width: `${Math.min(100, Math.max(2, pct))}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Memory & Hardware Sizing Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 tabular-nums">
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">COST N (MEMORY/CPU)</span>
+          <span className="text-xs text-[#38bdf8] font-bold">
+            {data.N} ({data.N.toLocaleString()} BLOCKS)
+          </span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">BLOCK FACTOR r</span>
+          <span className="text-xs text-[#34d399] font-bold">
+            r={data.r} ({128 * data.r}B / BLOCK)
+          </span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">PARALLELISM p</span>
+          <span className="text-xs text-[#f8fafc] font-bold">
+            p={data.p} ({data.blockIndex ? `LANE ${data.blockIndex}/${data.totalBlocks}` : '1 LANE'})
+          </span>
+        </div>
+        <div className="flex flex-col p-2 rounded-[2px] bg-[#0e131b] border border-[#1f2937]">
+          <span className="text-[9px] text-[#64748b] font-bold">RAM ALLOCATION</span>
+          <span className="text-xs text-[#e5a93b] font-bold phosphor-amber">
+            {(data.memoryFootprintBytes / 1024).toFixed(1)} KiB ({data.memoryFootprintBytes.toLocaleString()} B)
+          </span>
+        </div>
+      </div>
+
+      {/* Active ROMix State Cards */}
+      {(data.xHexSnippet || data.vjHexSnippet) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {data.xHexSnippet && (
+            <div className="space-y-1 p-2 rounded-[2px] bg-[#0e141f] border border-[#38bdf8]/30">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[#38bdf8]">
+                  WORKING STATE BLOCK X
+                </span>
+                <span className="text-[8px] text-[#64748b]">SALSA20/8 BLOCKMIX</span>
+              </div>
+              <div className="text-[10px] text-[#38bdf8] font-bold break-all bg-[#090c10] p-1.5 rounded-[2px] border border-[#1f2937] tabular-nums">
+                0x{data.xHexSnippet}...
+              </div>
+            </div>
+          )}
+
+          {data.vjHexSnippet && (
+            <div className="space-y-1 p-2 rounded-[2px] bg-[#1c1424] border border-[#c084fc]/30">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[#c084fc]">
+                  FETCHED MEMORY BLOCK V[{data.lookupTargetV ?? 0}]
+                </span>
+                <span className="text-[8px] text-[#64748b]">INTEGERIFY(X) mod {data.N}</span>
+              </div>
+              <div className="text-[10px] text-[#c084fc] font-bold break-all bg-[#090c10] p-1.5 rounded-[2px] border border-[#1f2937] tabular-nums">
+                0x{data.vjHexSnippet}...
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Derived Key Result (When Complete) */}
+      {data.derivedKeyHex && (
+        <div className="space-y-1 p-2.5 rounded-[2px] bg-[#0c1813] border border-[#34d399]/40">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[#34d399]">
+              FINAL SCRYPT DERIVED KEY (DK) — {data.dkLen * 8} BITS
+            </span>
+            <span className="rounded-[2px] bg-[#0f291e] px-1.5 py-0.2 text-[8.5px] font-bold text-[#34d399] border border-[#34d399]/40">
+              MEMORY-HARD PROOF-OF-WORK READY
             </span>
           </div>
           <div className="text-xs text-[#34d399] font-bold break-all bg-[#090c10] p-2 rounded-[2px] border border-[#1f2937] tabular-nums select-all">

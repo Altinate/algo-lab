@@ -161,8 +161,8 @@ mlDsaPlugins.forEach(register);
 encodingPlugins.forEach(register);
 
 // Tools Plugins (KDF, Wallet/Mnemonic, Generators, Utilities)
-import { pbkdf2Plugin } from './tools';
-[pbkdf2Plugin].forEach(register);
+import { pbkdf2Plugin, scryptPlugin } from './tools';
+[pbkdf2Plugin, scryptPlugin].forEach(register);
 
 /** Get an algorithm plugin by name */
 export function getAlgorithm(name: string): AlgorithmPlugin | undefined {

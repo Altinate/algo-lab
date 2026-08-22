@@ -104,7 +104,7 @@ export default function AlgorithmSelector({
             <optgroup key={family} label={family}>
               {algos.map((algo) => (
                 <option key={algo.info.name} value={algo.info.name}>
-                  {algo.info.name} ({algo.info.digestSize}-bit)
+                  {algo.info.name} ({algo.info.category === 'symmetric' ? `${algo.info.keySize || algo.info.digestSize}b Key` : `${algo.info.digestSize}-bit`})
                 </option>
               ))}
             </optgroup>
@@ -168,7 +168,7 @@ export default function AlgorithmSelector({
                         </div>
                         <div className="flex items-center gap-1.5">
                           <span className="text-[9px] text-[#64748b]">
-                            {algo.info.digestSize}b
+                            {algo.info.category === 'symmetric' ? `${algo.info.keySize || algo.info.digestSize}b` : `${algo.info.digestSize}b`}
                           </span>
                           <span
                             className={`inline-flex items-center gap-0.5 rounded-[2px] px-1 py-0.1 text-[8px] font-bold border ${sec.badge}`}

@@ -138,7 +138,7 @@ export default function App() {
                 {engine.algorithm.info.name}
               </span>
               <span className="text-[9px] text-[#64748b]">
-                [{engine.algorithm.info.digestSize}b]
+                [{engine.algorithm.info.category === 'symmetric' ? `${engine.algorithm.info.keySize || engine.algorithm.info.digestSize}b Key` : `${engine.algorithm.info.digestSize}b`}]
               </span>
             </div>
           )}
@@ -293,11 +293,12 @@ function getPhases(
   steps: { phase: string }[],
 ): { phase: string; startIndex: number }[] {
   const phases: { phase: string; startIndex: number }[] = [];
-  let lastPhase = '';
+  const seenPhases = new Set<string>();
+
   steps.forEach((step, index) => {
-    if (step.phase !== lastPhase) {
+    if (step.phase && !seenPhases.has(step.phase)) {
+      seenPhases.add(step.phase);
       phases.push({ phase: step.phase, startIndex: index });
-      lastPhase = step.phase;
     }
   });
   return phases;

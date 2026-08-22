@@ -20,7 +20,7 @@ function createAesPlugin(
     name,
     family,
     category: 'symmetric',
-    digestSize: isGcm ? 128 : 128,
+    digestSize: keySize,
     blockSize: 128,
     description: `Advanced Encryption Standard (AES) with ${keySize}-bit key in ${mode} (${
       mode === 'ECB'

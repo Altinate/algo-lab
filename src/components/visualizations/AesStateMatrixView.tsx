@@ -41,7 +41,7 @@ export default function AesStateMatrixView({ step }: AesStateMatrixViewProps) {
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-[#38bdf8] animate-pulse" />
           <span className="text-[10px] font-bold uppercase tracking-wider text-[#38bdf8]">
-            AES-128/192/256 CIPHER STATE ANALYZER
+            AES-{data.totalRounds === 14 ? '256' : data.totalRounds === 12 ? '192' : '128'} CIPHER STATE ANALYZER
           </span>
           {data.roundIndex !== undefined && data.totalRounds !== undefined && (
             <span className="rounded-[2px] bg-[#121620] px-2 py-0.5 text-[9px] font-semibold text-[#e5a93b] border border-[#e5a93b]/30 tabular-nums">

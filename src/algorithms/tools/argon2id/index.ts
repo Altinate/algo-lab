@@ -281,13 +281,18 @@ export function argon2Core(
   const secretKeyStr = K.length > 0 ? bytesToHex(K) : undefined;
   const associatedDataStr = X_data.length > 0 ? bytesToHex(X_data) : undefined;
 
+  const safeP = Math.max(1, Math.floor(p));
+  const safeT = Math.max(1, Math.floor(t));
+  const safeTagLength = Math.max(4, Math.floor(tagLength));
+  const safeM = Math.max(8 * safeP, Math.floor(m));
+
   const v = 0x13; // Version 19
   const y = type === 'argon2d' ? 0 : type === 'argon2i' ? 1 : 2;
 
-  const B_count = 4 * p * Math.floor(m / (4 * p));
-  const q = Math.floor(B_count / p);
+  const B_count = 4 * safeP * Math.floor(safeM / (4 * safeP));
+  const q = Math.floor(B_count / safeP);
   const s_L = Math.floor(q / 4);
-  const totalComputedBlocks = B_count * t;
+  const totalComputedBlocks = B_count * safeT;
 
   steps.push({
     id: 'argon2id-init',
@@ -319,10 +324,10 @@ export function argon2Core(
   const h0Input = new Uint8Array(40 + P.length + S.length + K.length + X_data.length);
   const dv = new DataView(h0Input.buffer);
   let pos = 0;
-  dv.setUint32(pos, p, true); pos += 4;
-  dv.setUint32(pos, tagLength, true); pos += 4;
-  dv.setUint32(pos, m, true); pos += 4;
-  dv.setUint32(pos, t, true); pos += 4;
+  dv.setUint32(pos, safeP, true); pos += 4;
+  dv.setUint32(pos, safeTagLength, true); pos += 4;
+  dv.setUint32(pos, safeM, true); pos += 4;
+  dv.setUint32(pos, safeT, true); pos += 4;
   dv.setUint32(pos, v, true); pos += 4;
   dv.setUint32(pos, y, true); pos += 4;
   dv.setUint32(pos, P.length, true); pos += 4;
@@ -350,10 +355,10 @@ export function argon2Core(
         salt: saltStr,
         secretKey: secretKeyStr,
         associatedData: associatedDataStr,
-        m,
-        t,
-        p,
-        tagLength,
+        m: safeM,
+        t: safeT,
+        p: safeP,
+        tagLength: safeTagLength,
         version: v,
         totalBlocks: B_count,
         totalComputedBlocks,
@@ -366,7 +371,7 @@ export function argon2Core(
 
   // Allocate matrix
   const B: BigUint64Array[][] = [];
-  for (let l = 0; l < p; l++) {
+  for (let l = 0; l < safeP; l++) {
     const lane: BigUint64Array[] = [];
     for (let c = 0; c < q; c++) {
       lane.push(new BigUint64Array(128));
@@ -375,7 +380,7 @@ export function argon2Core(
   }
 
   // Genesis blocks: B[l][0] and B[l][1]
-  for (let l = 0; l < p; l++) {
+  for (let l = 0; l < safeP; l++) {
     for (let j = 0; j < 2; j++) {
       const inBuf = new Uint8Array(72);
       inBuf.set(H0, 0);
@@ -422,14 +427,14 @@ export function argon2Core(
   const addressBlock = new BigUint64Array(128);
 
   // Compute full memory matrix across all passes, slices, lanes, and columns
-  for (let pass = 0; pass < t; pass++) {
+  for (let pass = 0; pass < safeT; pass++) {
     for (let slice = 0; slice < 4; slice++) {
       let sampleSnippet = '';
       let sampleAddressing: 'DATA_INDEPENDENT (Argon2i)' | 'DATA_DEPENDENT (Argon2d)' = 'DATA_INDEPENDENT (Argon2i)';
       let sampleRefLane = 0;
       let sampleRefCol = 0;
 
-      for (let l = 0; l < p; l++) {
+      for (let l = 0; l < safeP; l++) {
         for (let idx = 0; idx < s_L; idx++) {
           const col = slice * s_L + idx;
           if (pass === 0 && col < 2) continue;
@@ -448,7 +453,7 @@ export function argon2Core(
               inputZ[1] = BigInt(l);
               inputZ[2] = BigInt(slice);
               inputZ[3] = BigInt(B_count);
-              inputZ[4] = BigInt(t);
+              inputZ[4] = BigInt(safeT);
               inputZ[5] = BigInt(y);
               inputZ[6] = BigInt(Math.floor(idx / 128) + 1);
               for (let k = 7; k < 128; k++) inputZ[k] = 0n;
@@ -468,8 +473,10 @@ export function argon2Core(
 
           // Reference lane
           let refLane = l;
-          if (pass > 0 || slice > 0) {
-            refLane = Number(J2 % BigInt(p));
+          if (pass === 0 && slice === 0) {
+            refLane = l;
+          } else {
+            refLane = Number(J2 % BigInt(safeP));
           }
 
           // Reference index calculation
@@ -528,24 +535,24 @@ export function argon2Core(
 
       // Record telemetry step for this slice/pass
       const currentGlobalSlice = pass * 4 + slice + 1;
-      const totalGlobalSlices = t * 4;
+      const totalGlobalSlices = safeT * 4;
       const pct = Math.round(20 + (currentGlobalSlice / totalGlobalSlices) * 70);
 
       steps.push({
         id: `argon2id-pass-${pass}-slice-${slice}`,
-        title: `Pass ${pass + 1}/${t}, Slice ${slice + 1}/4 (${sampleAddressing.split(' ')[0]})`,
+        title: `Pass ${pass + 1}/${safeT}, Slice ${slice + 1}/4 (${sampleAddressing.split(' ')[0]})`,
         phase: `PASS ${pass + 1} SLICE ${slice + 1}`,
-        description: `Executed Segment: Slice ${slice + 1}/4 in Pass ${pass + 1}. Mode: ${sampleAddressing}.\nComputed ${p * s_L} 1KB blocks using G(X, Y) 8×8 BLAKE2b matrix compression.\nSample Block State: 0x${sampleSnippet}... Ref: B[Lane ${sampleRefLane}][Col ${sampleRefCol}].`,
+        description: `Executed Segment: Slice ${slice + 1}/4 in Pass ${pass + 1}. Mode: ${sampleAddressing}.\nComputed ${safeP * s_L} 1KB blocks using G(X, Y) 8×8 BLAKE2b matrix compression.\nSample Block State: 0x${sampleSnippet}... Ref: B[Lane ${sampleRefLane}][Col ${sampleRefCol}].`,
         visualizationType: 'binary-transform',
         data: {
           argon2id: {
             toolType: 'Argon2id',
             password: passwordStr,
             salt: saltStr,
-            m,
-            t,
-            p,
-            tagLength,
+            m: safeM,
+            t: safeT,
+            p: safeP,
+            tagLength: safeTagLength,
             version: v,
             totalBlocks: B_count,
             totalComputedBlocks,
@@ -566,7 +573,7 @@ export function argon2Core(
 
   // Final block XOR folding
   const finalBlock = new BigUint64Array(128);
-  for (let l = 0; l < p; l++) {
+  for (let l = 0; l < safeP; l++) {
     for (let w = 0; w < 128; w++) {
       finalBlock[w] ^= B[l][q - 1][w];
     }
@@ -584,17 +591,17 @@ export function argon2Core(
     id: 'argon2id-final-fold',
     title: 'Multi-Lane Block XOR Folding',
     phase: 'LANE FOLDING',
-    description: `Combined final column blocks across all ${p} lanes: B_final = ⨁ B[l][${q - 1}].\nFinal 1024-Byte Block Snippet: 0x${finalBlockSnippet}...`,
+    description: `Combined final column blocks across all ${safeP} lanes: B_final = ⨁ B[l][${q - 1}].\nFinal 1024-Byte Block Snippet: 0x${finalBlockSnippet}...`,
     visualizationType: 'binary-transform',
     data: {
       argon2id: {
         toolType: 'Argon2id',
         password: passwordStr,
         salt: saltStr,
-        m,
-        t,
-        p,
-        tagLength,
+        m: safeM,
+        t: safeT,
+        p: safeP,
+        tagLength: safeTagLength,
         version: v,
         totalBlocks: B_count,
         totalComputedBlocks,

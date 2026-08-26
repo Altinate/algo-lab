@@ -1,5 +1,6 @@
 import React from 'react';
 import { stringToBytes } from '../algorithms/utils';
+import { PRESETS } from '../algorithms/tools/format-parsing/presets';
 
 interface InputPanelProps {
   input: string;
@@ -7,6 +8,8 @@ interface InputPanelProps {
   isXOF?: boolean;
   xofOutputBytes?: number;
   onXofOutputBytesChange?: (bytes: number) => void;
+  algorithmFamily?: string;
+  algorithmName?: string;
 }
 
 const XOF_PRESETS = [16, 32, 64, 128, 256];
@@ -17,8 +20,19 @@ export default function InputPanel({
   isXOF,
   xofOutputBytes = 32,
   onXofOutputBytesChange,
+  algorithmFamily,
+  algorithmName,
 }: InputPanelProps) {
   const bytes = stringToBytes(input);
+  const isFormatTool =
+    algorithmFamily === 'Format & Parsing Tools' ||
+    algorithmName === 'PEM Decoder' ||
+    algorithmName === 'ASN.1 / DER Inspector' ||
+    algorithmName === 'X.509 Certificate Inspector' ||
+    algorithmName === 'JWK Formatter & Parser' ||
+    input.includes('\n') ||
+    input.startsWith('-----BEGIN') ||
+    input.startsWith('{');
 
   return (
     <div className="flex flex-col space-y-1.5 font-mono">
@@ -29,7 +43,7 @@ export default function InputPanel({
             htmlFor="hash-input"
             className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]"
           >
-            BUFFER IN: DATA STREAM
+            {isFormatTool ? 'BUFFER IN: FORMATTED ARTIFACT / PEM / JSON' : 'BUFFER IN: DATA STREAM'}
           </label>
         </div>
         <div className="flex gap-2 text-[10px] text-[#64748b] tabular-nums">
@@ -39,14 +53,45 @@ export default function InputPanel({
         </div>
       </div>
 
-      <input
-        id="hash-input"
-        type="text"
-        value={input}
-        onChange={(e) => onInputChange(e.target.value)}
-        placeholder="ENTER DATA STREAM TO COMPUTE DIGEST..."
-        className="h-10 w-full rounded-[2px] border border-[#1f2937] bg-[#0c1017] px-3 font-mono text-xs text-[#f8fafc] placeholder-[#475569] focus:border-[#38bdf8] focus:outline-none transition-colors tabular-nums"
-      />
+      {isFormatTool ? (
+        <textarea
+          id="hash-input"
+          value={input}
+          onChange={(e) => onInputChange(e.target.value)}
+          placeholder="PASTE PEM (-----BEGIN ... -----), RAW DER HEX, OR JWK JSON..."
+          rows={5}
+          className="w-full rounded-[2px] border border-[#1f2937] bg-[#0c1017] p-2.5 font-mono text-xs text-[#f8fafc] placeholder-[#475569] focus:border-[#38bdf8] focus:outline-none transition-colors tabular-nums resize-y leading-relaxed"
+        />
+      ) : (
+        <input
+          id="hash-input"
+          type="text"
+          value={input}
+          onChange={(e) => onInputChange(e.target.value)}
+          placeholder="ENTER DATA STREAM TO COMPUTE DIGEST..."
+          className="h-10 w-full rounded-[2px] border border-[#1f2937] bg-[#0c1017] px-3 font-mono text-xs text-[#f8fafc] placeholder-[#475569] focus:border-[#38bdf8] focus:outline-none transition-colors tabular-nums"
+        />
+      )}
+
+      {/* Preset Selector for Format Tools */}
+      {isFormatTool && (
+        <div className="flex flex-wrap items-center gap-1 p-1 bg-[#0c1017] border border-[#1f2937] rounded-[2px] text-xs">
+          <span className="text-[9px] uppercase tracking-wider text-[#64748b] mr-1 font-semibold">
+            SAMPLE PRESETS:
+          </span>
+          {PRESETS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => onInputChange(p.content)}
+              className="px-1.5 py-0.5 text-[9px] font-medium bg-[#121620] hover:bg-[#1a2233] hover:text-[#38bdf8] text-[#94a3b8] border border-[#1f2937] rounded-[2px] transition-colors"
+              title={p.description}
+            >
+              {p.name.split('(')[0].trim()}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ─── XOF Variable Output Length Selector ───────────────────────── */}
       {isXOF && onXofOutputBytesChange && (

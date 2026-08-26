@@ -13,6 +13,7 @@ import AsymmetricModExpView from './visualizations/AsymmetricModExpView';
 import EccPointView from './visualizations/EccPointView';
 import KeyExchangeView from './visualizations/KeyExchangeView';
 import LatticePolynomialView from './visualizations/LatticePolynomialView';
+import FormatInspectorView from './visualizations/FormatInspectorView';
 
 interface StepVisualizerProps {
   step: ComputationStep | null;
@@ -61,6 +62,8 @@ export default function StepVisualizer({
         return <MerkleTreeView step={step} />;
       case 'mixing-function':
         return <MixingFunctionView step={step} />;
+      case 'asn1-structure':
+        return <FormatInspectorView step={step} />;
       case 'final-digest':
         return <FinalDigestView step={step} />;
       default:

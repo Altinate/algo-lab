@@ -271,6 +271,8 @@ export default function App() {
                   isXOF={engine.isXOF}
                   xofOutputBytes={engine.xofOutputBytes}
                   onXofOutputBytesChange={engine.setXofOutputBytes}
+                  algorithmFamily={engine.algorithm?.info.family}
+                  algorithmName={engine.algorithmName}
                 />
                 <HashOutput
                   digest={engine.digest}

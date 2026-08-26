@@ -41,3 +41,5 @@ export const sha256Plugin: AlgorithmPlugin = {
     });
   },
 };
+
+export default sha256Plugin;

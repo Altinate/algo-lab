@@ -166,3 +166,56 @@ export function formatBinaryGroups(binary: string, groupSize: number = 8): strin
   }
   return groups.join(' ');
 }
+
+const B64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+/** Convert a Uint8Array to standard Base64 string */
+export function bytesToBase64(bytes: Uint8Array): string {
+  let result = '';
+  const len = bytes.length;
+  for (let i = 0; i < len; i += 3) {
+    const b0 = bytes[i];
+    const b1 = i + 1 < len ? bytes[i + 1] : 0;
+    const b2 = i + 2 < len ? bytes[i + 2] : 0;
+
+    result += B64_CHARS[b0 >> 2];
+    result += B64_CHARS[((b0 & 3) << 4) | (b1 >> 4)];
+    result += i + 1 < len ? B64_CHARS[((b1 & 15) << 2) | (b2 >> 6)] : '=';
+    result += i + 2 < len ? B64_CHARS[b2 & 63] : '=';
+  }
+  return result;
+}
+
+/** Convert a Base64 or Base64URL string to Uint8Array */
+export function base64ToBytes(b64: string): Uint8Array {
+  const clean = b64.replace(/[\r\n\s=]/g, '').replace(/-/g, '+').replace(/_/g, '/');
+  const lookup = new Uint8Array(256);
+  for (let i = 0; i < 64; i++) lookup[B64_CHARS.charCodeAt(i)] = i;
+
+  const len = clean.length;
+  const byteLen = Math.floor((len * 3) / 4);
+  const bytes = new Uint8Array(byteLen);
+
+  let p = 0;
+  for (let i = 0; i < len; i += 4) {
+    const enc1 = lookup[clean.charCodeAt(i)];
+    const enc2 = lookup[clean.charCodeAt(i + 1)];
+    const enc3 = i + 2 < len ? lookup[clean.charCodeAt(i + 2)] : 0;
+    const enc4 = i + 3 < len ? lookup[clean.charCodeAt(i + 3)] : 0;
+
+    if (p < byteLen) bytes[p++] = (enc1 << 2) | (enc2 >> 4);
+    if (i + 2 < len && p < byteLen) bytes[p++] = ((enc2 & 15) << 4) | (enc3 >> 2);
+    if (i + 3 < len && p < byteLen) bytes[p++] = ((enc3 & 3) << 6) | enc4;
+  }
+  return bytes.subarray(0, p);
+}
+
+/** Convert a Uint8Array to URL-safe Base64URL string */
+export function bytesToBase64Url(bytes: Uint8Array): string {
+  return bytesToBase64(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/** Convert a Base64URL string to Uint8Array */
+export function base64UrlToBytes(b64url: string): Uint8Array {
+  return base64ToBytes(b64url);
+}

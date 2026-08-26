@@ -39,6 +39,7 @@ export type VisualizationType =
   | 'xor-table'           // Show XOR/polynomial operations (CRC32, Adler32)
   | 'merkle-tree'         // Show tree structure (BLAKE3)
   | 'mixing-function'     // Show G mixing rounds (BLAKE2, BLAKE3, ChaCha20)
+  | 'asn1-structure'      // Show ASN.1 DER hierarchical tree, X.509 certs, and JWK formatting
   | 'final-digest'        // Show final concatenation → hex output
   | 'generic';            // Fallback: render data as labeled key-value pairs
 

@@ -2,3 +2,8 @@ export * from './pbkdf2';
 export * from './scrypt';
 export * from './argon2id';
 export * from './bip39';
+export * from './format-parsing/pem-plugin';
+export * from './format-parsing/asn1-plugin';
+export * from './format-parsing/x509-plugin';
+export * from './format-parsing/jwk-plugin';
+export * from './format-parsing/presets';

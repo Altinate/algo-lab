@@ -6,7 +6,8 @@
 
 import { parseAsn1, type Asn1Node, decodeOid, decodeInteger } from './asn1';
 import { parsePem } from './pem';
-import { bytesToHex, hexToBytes, stringToBytes } from '../../utils';
+import { bytesToHex, hexToBytes, stringToBytes, rightRotate64, rightShift64, add64 } from '../../utils';
+import { H_384, K_512 } from '../../sha512/constants';
 import sha256Plugin from '../../sha256';
 import sha1Plugin from '../../sha1';
 import sha384Plugin from '../../sha384';
@@ -98,6 +99,135 @@ const RDN_OID_SHORT_NAMES: Record<string, string> = {
   '2.5.4.5': 'serialNumber',
   '1.2.840.113549.1.9.1': 'emailAddress',
 };
+
+function computeSha256Raw(inputBytes: Uint8Array): string {
+  const K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  ];
+  let H0 = 0x6a09e667, H1 = 0xbb67ae85, H2 = 0x3c6ef372, H3 = 0xa54ff53a;
+  let H4 = 0x510e527f, H5 = 0x9b05688c, H6 = 0x1f83d9ab, H7 = 0x5be0cd19;
+
+  const msgBytes = inputBytes.length;
+  const msgBitLen = msgBytes * 8;
+  let paddingZeroBytes = 64 - ((msgBytes + 1 + 8) % 64);
+  if (paddingZeroBytes === 64) paddingZeroBytes = 0;
+  const totalLen = msgBytes + 1 + paddingZeroBytes + 8;
+  const padded = new Uint8Array(totalLen);
+  padded.set(inputBytes);
+  padded[msgBytes] = 0x80;
+  const dv = new DataView(padded.buffer);
+  dv.setUint32(totalLen - 8, Math.floor(msgBitLen / 0x100000000), false);
+  dv.setUint32(totalLen - 4, msgBitLen >>> 0, false);
+
+  const W = new Uint32Array(64);
+  for (let i = 0; i < totalLen; i += 64) {
+    for (let t = 0; t < 16; t++) {
+      W[t] = dv.getUint32(i + t * 4, false);
+    }
+    for (let t = 16; t < 64; t++) {
+      const s0 = ((W[t - 15] >>> 7) | (W[t - 15] << 25)) ^ ((W[t - 15] >>> 18) | (W[t - 15] << 14)) ^ (W[t - 15] >>> 3);
+      const s1 = ((W[t - 2] >>> 17) | (W[t - 2] << 15)) ^ ((W[t - 2] >>> 19) | (W[t - 2] << 13)) ^ (W[t - 2] >>> 10);
+      W[t] = (W[t - 16] + s0 + W[t - 7] + s1) >>> 0;
+    }
+    let a = H0, b = H1, c = H2, d = H3, e = H4, f = H5, g = H6, h = H7;
+    for (let t = 0; t < 64; t++) {
+      const S1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+      const ch = (e & f) ^ (~e & g);
+      const temp1 = (h + S1 + ch + K[t] + W[t]) >>> 0;
+      const S0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const temp2 = (S0 + maj) >>> 0;
+      h = g; g = f; f = e; e = (d + temp1) >>> 0;
+      d = c; c = b; b = a; a = (temp1 + temp2) >>> 0;
+    }
+    H0 = (H0 + a) >>> 0; H1 = (H1 + b) >>> 0; H2 = (H2 + c) >>> 0; H3 = (H3 + d) >>> 0;
+    H4 = (H4 + e) >>> 0; H5 = (H5 + f) >>> 0; H6 = (H6 + g) >>> 0; H7 = (H7 + h) >>> 0;
+  }
+  return [H0, H1, H2, H3, H4, H5, H6, H7].map((h) => h.toString(16).padStart(8, '0')).join('');
+}
+
+function computeSha1Raw(inputBytes: Uint8Array): string {
+  let H0 = 0x67452301, H1 = 0xEFCDAB89, H2 = 0x98BADCFE, H3 = 0x10325476, H4 = 0xC3D2E1F0;
+  const msgBytes = inputBytes.length;
+  const msgBitLen = msgBytes * 8;
+  let paddingZeroBytes = 64 - ((msgBytes + 1 + 8) % 64);
+  if (paddingZeroBytes === 64) paddingZeroBytes = 0;
+  const totalLen = msgBytes + 1 + paddingZeroBytes + 8;
+  const padded = new Uint8Array(totalLen);
+  padded.set(inputBytes);
+  padded[msgBytes] = 0x80;
+  const dv = new DataView(padded.buffer);
+  dv.setUint32(totalLen - 8, Math.floor(msgBitLen / 0x100000000), false);
+  dv.setUint32(totalLen - 4, msgBitLen >>> 0, false);
+
+  const W = new Uint32Array(80);
+  for (let i = 0; i < totalLen; i += 64) {
+    for (let t = 0; t < 16; t++) W[t] = dv.getUint32(i + t * 4, false);
+    for (let t = 16; t < 80; t++) {
+      const v = W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16];
+      W[t] = (v << 1) | (v >>> 31);
+    }
+    let a = H0, b = H1, c = H2, d = H3, e = H4;
+    for (let t = 0; t < 80; t++) {
+      let f = 0, k = 0;
+      if (t < 20) { f = (b & c) | (~b & d); k = 0x5A827999; }
+      else if (t < 40) { f = b ^ c ^ d; k = 0x6ED9EBA1; }
+      else if (t < 60) { f = (b & c) | (b & d) | (c & d); k = 0x8F1BBCDC; }
+      else { f = b ^ c ^ d; k = 0xCA62C1D6; }
+      const temp = (((a << 5) | (a >>> 27)) + f + e + k + W[t]) >>> 0;
+      e = d; d = c; c = ((b << 30) | (b >>> 2)) >>> 0; b = a; a = temp;
+    }
+    H0 = (H0 + a) >>> 0; H1 = (H1 + b) >>> 0; H2 = (H2 + c) >>> 0; H3 = (H3 + d) >>> 0;
+    H4 = (H4 + e) >>> 0;
+  }
+  return [H0, H1, H2, H3, H4].map((h) => h.toString(16).padStart(8, '0')).join('');
+}
+
+function computeSha384Raw(inputBytes: Uint8Array): string {
+  let H = [...H_384];
+  const msgBytes = inputBytes.length;
+  const msgBitLen = BigInt(msgBytes) * 8n;
+  let paddingZeroBytes = 128 - ((msgBytes + 1 + 16) % 128);
+  if (paddingZeroBytes === 128) paddingZeroBytes = 0;
+  const totalLen = msgBytes + 1 + paddingZeroBytes + 16;
+  const padded = new Uint8Array(totalLen);
+  padded.set(inputBytes);
+  padded[msgBytes] = 0x80;
+  const dv = new DataView(padded.buffer);
+  dv.setBigUint64(totalLen - 8, msgBitLen, false);
+
+  const sigma0 = (x: bigint) => rightRotate64(x, 1) ^ rightRotate64(x, 8) ^ rightShift64(x, 7);
+  const sigma1 = (x: bigint) => rightRotate64(x, 19) ^ rightRotate64(x, 61) ^ rightShift64(x, 6);
+  const bigSigma0 = (x: bigint) => rightRotate64(x, 28) ^ rightRotate64(x, 34) ^ rightRotate64(x, 39);
+  const bigSigma1 = (x: bigint) => rightRotate64(x, 14) ^ rightRotate64(x, 18) ^ rightRotate64(x, 41);
+  const ch = (x: bigint, y: bigint, z: bigint) => (x & y) ^ ((~x & 0xFFFFFFFFFFFFFFFFn) & z);
+  const maj = (x: bigint, y: bigint, z: bigint) => (x & y) ^ (x & z) ^ (y & z);
+
+  for (let i = 0; i < totalLen; i += 128) {
+    const W = new Array<bigint>(80).fill(0n);
+    for (let t = 0; t < 16; t++) W[t] = dv.getBigUint64(i + t * 8, false);
+    for (let t = 16; t < 80; t++) {
+      W[t] = add64(sigma1(W[t - 2]), W[t - 7], sigma0(W[t - 15]), W[t - 16]);
+    }
+    let a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+    for (let t = 0; t < 80; t++) {
+      const T1 = add64(h, bigSigma1(e), ch(e, f, g), K_512[t], W[t]);
+      const T2 = add64(bigSigma0(a), maj(a, b, c));
+      h = g; g = f; f = e; e = add64(d, T1);
+      d = c; c = b; b = a; a = add64(T1, T2);
+    }
+    H[0] = add64(H[0], a); H[1] = add64(H[1], b); H[2] = add64(H[2], c); H[3] = add64(H[3], d);
+    H[4] = add64(H[4], e); H[5] = add64(H[5], f); H[6] = add64(H[6], g); H[7] = add64(H[7], h);
+  }
+  return H.slice(0, 6).map((h) => h.toString(16).padStart(16, '0')).join('');
+}
 
 /** Parses Name / RDN SEQUENCE into structured fields */
 function parseRdnSequence(node?: Asn1Node): { dn: string; rdns: RelativeDistinguishedName[]; commonName?: string; organization?: string; country?: string } {
@@ -413,7 +543,9 @@ export function parseX509Certificate(input: string | Uint8Array): X509Certificat
 
   // Digest over TBS raw bytes
   const tbsRawBytes = tbsNode.rawBytes;
-  const tbsDigestSha256 = sha256Plugin.compute(bytesToHex(tbsRawBytes), { inputEncoding: 'hex' }).digest;
+  const tbsDigestSha256 = computeSha256Raw(tbsRawBytes);
+  const tbsDigestSha384 = computeSha384Raw(tbsRawBytes);
+  const tbsDigestSha1 = computeSha1Raw(tbsRawBytes);
 
   // Self-signature detection
   const isSelfSigned = issuer.dn !== '' && issuer.dn === subject.dn;
@@ -439,22 +571,25 @@ export function parseX509Certificate(input: string | Uint8Array): X509Certificat
         }
 
         const emHex = res.toString(16).padStart(rsaParameters.modulusHex.length, '0');
-        // PKCS#1 v1.5 SHA-256 DigestInfo prefix: 0001ff...ff003031300d060960864801650304020105000420 + digest
         const isSha256 = signatureAlgorithmOid.includes('1.1.11') || signatureAlgorithmName.toLowerCase().includes('sha256');
+        const isSha384 = signatureAlgorithmOid.includes('1.1.12') || signatureAlgorithmName.toLowerCase().includes('sha384');
+        const isSha1 = signatureAlgorithmOid.includes('1.1.5') || signatureAlgorithmName.toLowerCase().includes('sha1');
+
         if (isSha256 && emHex.toLowerCase().endsWith(tbsDigestSha256.toLowerCase())) {
+          signatureVerified = true;
+          signatureVerificationMessage = 'RSA-PKCS#1 v1.5 / SHA-256 Self-Signature Authenticated (Valid)';
+        } else if (isSha384 && emHex.toLowerCase().endsWith(tbsDigestSha384.toLowerCase())) {
+          signatureVerified = true;
+          signatureVerificationMessage = 'RSA-PKCS#1 v1.5 / SHA-384 Self-Signature Authenticated (Valid)';
+        } else if (isSha1 && emHex.toLowerCase().endsWith(tbsDigestSha1.toLowerCase())) {
+          signatureVerified = true;
+          signatureVerificationMessage = 'RSA-PKCS#1 v1.5 / SHA-1 Self-Signature Authenticated (Valid)';
+        } else if (emHex.toLowerCase().endsWith(tbsDigestSha256.toLowerCase()) || emHex.toLowerCase().endsWith(tbsDigestSha384.toLowerCase())) {
           signatureVerified = true;
           signatureVerificationMessage = 'RSA-PKCS#1 v1.5 Self-Signature Authenticated (Valid)';
         } else {
-          // Check SHA-1 or SHA-384
-          const tbsSha1 = sha1Plugin.compute(bytesToHex(tbsRawBytes)).digest;
-          const tbsSha384 = sha384Plugin.compute(bytesToHex(tbsRawBytes)).digest;
-          if (emHex.toLowerCase().endsWith(tbsSha1.toLowerCase()) || emHex.toLowerCase().endsWith(tbsSha384.toLowerCase())) {
-            signatureVerified = true;
-            signatureVerificationMessage = 'RSA-PKCS#1 v1.5 Self-Signature Authenticated (Valid)';
-          } else {
-            signatureVerified = false;
-            signatureVerificationMessage = 'RSA Self-Signature Verification Failed (Invalid)';
-          }
+          signatureVerified = false;
+          signatureVerificationMessage = 'RSA Self-Signature Verification Failed (Invalid)';
         }
       } catch (err: any) {
         signatureVerified = false;

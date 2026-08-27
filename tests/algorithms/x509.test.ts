@@ -20,6 +20,23 @@ describe('X.509 Certificate Inspector', () => {
     expect(cert.subjectPublicKeyInfo.ecParameters?.curveName).toContain('prime256v1');
   });
 
+  it('correctly parses and cryptographically authenticates real Let\'s Encrypt ISRG Root X1', () => {
+    const cert = parseX509Certificate(PRESETS[0].content);
+    expect(cert.version).toBe(3);
+    expect(cert.issuer.commonName).toBe('ISRG Root X1');
+    expect(cert.issuer.organization).toBe('Internet Security Research Group');
+    expect(cert.subject.commonName).toBe('ISRG Root X1');
+    expect(cert.subject.organization).toBe('Internet Security Research Group');
+    expect(cert.validity.notBeforeIso).toBe('2015-06-04T11:04:38Z');
+    expect(cert.validity.notAfterIso).toBe('2035-06-04T11:04:38Z');
+    expect(cert.subjectPublicKeyInfo.keyType).toBe('RSA');
+    expect(cert.subjectPublicKeyInfo.keySizeBits).toBe(4096);
+    expect(cert.isCa).toBe(true);
+    expect(cert.isSelfSigned).toBe(true);
+    expect(cert.signatureVerified).toBe(true);
+    expect(cert.signatureVerificationMessage).toContain('RSA-PKCS#1 v1.5 / SHA-256 Self-Signature Authenticated (Valid)');
+  });
+
   it('correctly runs x509Plugin computation generating 5 inspection steps', () => {
     const res = x509Plugin.compute(PRESETS[1].content);
     expect(res.steps.length).toBe(5);

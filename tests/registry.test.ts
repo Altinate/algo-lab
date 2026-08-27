@@ -216,7 +216,7 @@ describe('Algorithm Registry', () => {
 
   it('can look up every algorithm by name across all categories', () => {
     const algorithms = listAlgorithms();
-    expect(algorithms.length).toBe(137);
+    expect(algorithms.length).toBe(141);
     for (const algo of algorithms) {
       const retrieved = getAlgorithm(algo.info.name);
       expect(retrieved).toBeDefined();
@@ -265,6 +265,7 @@ describe('Algorithm Registry', () => {
     const toolsFamilies = getAlgorithmsByFamily('tools');
     expect(toolsFamilies.has('Key Derivation Functions (KDF)')).toBe(true);
     expect(toolsFamilies.has('Wallet / Mnemonic Generation')).toBe(true);
+    expect(toolsFamilies.has('Entropy & CSPRNG Tools')).toBe(true);
     expect(toolsFamilies.has('Format & Parsing Tools')).toBe(true);
   });
 

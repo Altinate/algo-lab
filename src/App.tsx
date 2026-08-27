@@ -314,6 +314,13 @@ export default function App() {
             step={currentStepData}
             currentStep={playback.currentStep}
             totalSteps={engine.steps.length}
+            input={engine.input}
+            onNavigateToAlgorithm={(algoName, initialInput) => {
+              engine.setAlgorithmName(algoName);
+              if (initialInput) {
+                engine.setInput(initialInput);
+              }
+            }}
           />
         </main>
       </div>

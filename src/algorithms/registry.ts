@@ -160,9 +160,35 @@ mlDsaPlugins.forEach(register);
 // Register all Encoding Plugins (16 algorithms across 2 families)
 encodingPlugins.forEach(register);
 
-// Tools Plugins (KDF, Wallet/Mnemonic, Generators, Utilities, Format & Parsing)
-import { pbkdf2Plugin, scryptPlugin, argon2idPlugin, bip39Plugin, pemPlugin, asn1Plugin, x509Plugin, jwkPlugin } from './tools';
-[pbkdf2Plugin, scryptPlugin, argon2idPlugin, bip39Plugin, pemPlugin, asn1Plugin, x509Plugin, jwkPlugin].forEach(register);
+// Tools Plugins (KDF, Wallet/Mnemonic, Generators, Utilities, Format & Parsing, Entropy & CSPRNG)
+import { 
+  pbkdf2Plugin, 
+  scryptPlugin, 
+  argon2idPlugin, 
+  bip39Plugin, 
+  pemPlugin, 
+  asn1Plugin, 
+  x509Plugin, 
+  jwkPlugin,
+  shannonPlugin,
+  chiSquarePlugin,
+  csprngPlugin,
+  passwordPlugin,
+} from './tools';
+[
+  pbkdf2Plugin, 
+  scryptPlugin, 
+  argon2idPlugin, 
+  bip39Plugin, 
+  shannonPlugin,
+  chiSquarePlugin,
+  csprngPlugin,
+  passwordPlugin,
+  pemPlugin, 
+  asn1Plugin, 
+  x509Plugin, 
+  jwkPlugin
+].forEach(register);
 
 /** Get an algorithm plugin by name */
 export function getAlgorithm(name: string): AlgorithmPlugin | undefined {

@@ -14,17 +14,22 @@ import EccPointView from './visualizations/EccPointView';
 import KeyExchangeView from './visualizations/KeyExchangeView';
 import LatticePolynomialView from './visualizations/LatticePolynomialView';
 import FormatInspectorView from './visualizations/FormatInspectorView';
+import EntropyAnalysisView from './visualizations/EntropyAnalysisView';
 
 interface StepVisualizerProps {
   step: ComputationStep | null;
   currentStep: number;
   totalSteps: number;
+  input?: string;
+  onNavigateToAlgorithm?: (algoName: string, initialInput?: string) => void;
 }
 
 export default function StepVisualizer({
   step,
   currentStep,
   totalSteps,
+  input,
+  onNavigateToAlgorithm,
 }: StepVisualizerProps) {
   if (!step) {
     return (
@@ -64,6 +69,8 @@ export default function StepVisualizer({
         return <MixingFunctionView step={step} />;
       case 'asn1-structure':
         return <FormatInspectorView step={step} />;
+      case 'entropy-analysis':
+        return <EntropyAnalysisView step={step} input={input} onNavigateToAlgorithm={onNavigateToAlgorithm} />;
       case 'final-digest':
         return <FinalDigestView step={step} />;
       default:

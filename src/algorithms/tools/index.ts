@@ -7,3 +7,8 @@ export * from './format-parsing/asn1-plugin';
 export * from './format-parsing/x509-plugin';
 export * from './format-parsing/jwk-plugin';
 export * from './format-parsing/presets';
+export * from './entropy-csprng/shannon-plugin';
+export * from './entropy-csprng/chi-square-plugin';
+export * from './entropy-csprng/csprng-plugin';
+export * from './entropy-csprng/password-plugin';
+export * from './entropy-csprng/presets';

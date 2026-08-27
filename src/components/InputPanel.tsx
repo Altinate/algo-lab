@@ -1,6 +1,7 @@
 import React from 'react';
 import { stringToBytes } from '../algorithms/utils';
 import { PRESETS } from '../algorithms/tools/format-parsing/presets';
+import { ENTROPY_PRESETS } from '../algorithms/tools/entropy-csprng/presets';
 
 interface InputPanelProps {
   input: string;
@@ -85,6 +86,29 @@ export default function InputPanel({
               type="button"
               onClick={() => onInputChange(p.content)}
               className="px-1.5 py-0.5 text-[9px] font-medium bg-[#121620] hover:bg-[#1a2233] hover:text-[#38bdf8] text-[#94a3b8] border border-[#1f2937] rounded-[2px] transition-colors"
+              title={p.description}
+            >
+              {p.name.split('(')[0].trim()}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Preset Selector for Entropy & CSPRNG Tools */}
+      {(algorithmFamily === 'Entropy & CSPRNG Tools' ||
+        algorithmName === 'Shannon Entropy Calculator' ||
+        algorithmName === 'Chi-Square Distribution Test' ||
+        algorithmName === 'Password Strength & Entropy Estimator') && (
+        <div className="flex flex-wrap items-center gap-1 p-1 bg-[#0c1017] border border-[#1f2937] rounded-[2px] text-xs">
+          <span className="text-[9px] uppercase tracking-wider text-[#64748b] mr-1 font-semibold">
+            ENTROPY PRESETS:
+          </span>
+          {ENTROPY_PRESETS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => onInputChange(p.content)}
+              className="px-1.5 py-0.5 text-[9px] font-medium bg-[#121620] hover:bg-[#1a2233] hover:text-[#e5a93b] text-[#94a3b8] border border-[#1f2937] rounded-[2px] transition-colors"
               title={p.description}
             >
               {p.name.split('(')[0].trim()}
